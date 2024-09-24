@@ -1,0 +1,19 @@
+{
+  "name": "com.micolash.harmonyaudio",
+  "displayName": "Harmony Audio Manager",
+  "version": "1.0.1",
+  "unity": "2022.3",
+  "description": "A simple and quick-to-use audio manager for Unity.",
+  "keywords": [
+    "audio",
+    "manager",
+    "sound",
+    "music",
+    "sfx"
+  ],
+  "author": {
+    "name": "Niccolò Chiodo",
+    "email": "micononico@gmail.com",
+    "url": "https://github.com/MicoNoNico"
+  }
+}
