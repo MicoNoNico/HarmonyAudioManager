@@ -50,64 +50,64 @@ namespace HarmonyAudio.Demo
 
         private void SetSliders()
         {
-            musicVolumeSlider.value = AudioManager.Instance.GetMusicVolume();
-            sfxVolumeSlider.value = AudioManager.Instance.GetSfxVolume();
-            masterVolumeSlider.value = AudioManager.Instance.GetMasterVolume();
+            musicVolumeSlider.value = AudioManager.GetMusicVolume();
+            sfxVolumeSlider.value = AudioManager.GetSfxVolume();
+            masterVolumeSlider.value = AudioManager.GetMasterVolume();
         }
 
         private void OnPlayMusic()
         {
-            AudioManager.Instance.PlayMusic(musicClipName);
+            AudioManager.PlayMusic(musicClipName);
         }
 
         private void OnPauseMusic()
         {
-            AudioManager.Instance.PauseMusic();
+            AudioManager.PauseMusic();
         }
 
         private void OnStopMusic()
         {
-            AudioManager.Instance.StopMusic();
+            AudioManager.StopMusic();
         }
 
         private void OnPlaySFX()
         {
-            AudioManager.Instance.PlaySoundEffect(sfxClipName);
+            AudioManager.PlaySoundEffect(sfxClipName);
         }
 
         private void OnFadeInMusic()
         {
-            AudioManager.Instance.FadeMusicVolume(musicVolumeSlider.value, 1);
+            AudioManager.FadeMusicVolume(musicVolumeSlider.value, 1);
         }
 
         private void OnFadeOutMusic()
         {
-            AudioManager.Instance.FadeMusicVolume(0f, 1);
+            AudioManager.FadeMusicVolume(0f, 1);
         }
 
         private void OnMusicVolumeChanged(float value)
         {
-            AudioManager.Instance.SetMusicVolume(value);
+            AudioManager.SetMusicVolume(value);
         }
 
         private void OnSFXVolumeChanged(float value)
         {
-            AudioManager.Instance.SetSfxVolume(value);
+            AudioManager.SetSfxVolume(value);
         }
         
         private void OnMasterVolumeChanged(float value)
         {
-            AudioManager.Instance.SetMasterVolume(value);
+            AudioManager.SetMasterVolume(value);
         }
 
         private void OnSaveButton()
         {
-            AudioManager.Instance.SaveVolumeSettings();
+            AudioManager.SaveVolumeSettings();
         }
         
         private void OnLoadButton()
         {
-            AudioManager.Instance.LoadVolumeSettings();
+            AudioManager.LoadVolumeSettings();
             SetSliders();
         }
     }

@@ -20,14 +20,15 @@ namespace HarmonyAudio.Scripts
     {
         #region Singleton
 
-        public static AudioManager Instance { get; private set; }
+        private static AudioManager _instance;
 
         protected void Awake()
         {
-            if (Instance == null)
+            if (_instance == null)
             {
-                Instance = this;
+                _instance = this;
                 DontDestroyOnLoad(gameObject); // Make the AudioManager persist across scenes
+                Initialize();
             }
             else
             {
@@ -59,7 +60,7 @@ namespace HarmonyAudio.Scripts
 
         #region Initialization
 
-        private void Start()
+        private void Initialize()
         {
             LoadVolumeSettings();
 
@@ -83,15 +84,21 @@ namespace HarmonyAudio.Scripts
         /// </summary>
         /// <param name="musicClipName">The name of the music clip to play.</param>
         /// <param name="loop">Whether the music should loop.</param>
-        public void PlayMusic(string musicClipName, bool loop = true)
+        public static void PlayMusic(string musicClipName, bool loop = true)
         {
-            AudioClip clip = audioLibrary.GetMusicClip(musicClipName);
+            if (_instance == null)
+            {
+                Debug.LogError("AudioManager instance not found. Ensure an AudioManager exists in the scene.");
+                return;
+            }
+
+            AudioClip clip = _instance.audioLibrary.GetMusicClip(musicClipName);
             if (clip != null)
             {
-                musicSource.clip = clip;
-                musicSource.loop = loop;
-                musicSource.volume = musicVolume * masterVolume;
-                musicSource.Play();
+                _instance.musicSource.clip = clip;
+                _instance.musicSource.loop = loop;
+                _instance.musicSource.volume = _instance.musicVolume * _instance.masterVolume;
+                _instance.musicSource.Play();
             }
             else
             {
@@ -99,31 +106,48 @@ namespace HarmonyAudio.Scripts
             }
         }
 
-
         /// <summary>
         /// Stops the currently playing music.
         /// </summary>
-        public void StopMusic()
+        public static void StopMusic()
         {
-            musicSource.Stop();
+            if (_instance == null)
+            {
+                Debug.LogError("AudioManager instance not found.");
+                return;
+            }
+
+            _instance.musicSource.Stop();
             // Reset the volume (for fade coroutine)
-            musicSource.volume = musicVolume;
+            _instance.musicSource.volume = _instance.musicVolume;
         }
 
         /// <summary>
         /// Pauses the currently playing music.
         /// </summary>
-        public void PauseMusic()
+        public static void PauseMusic()
         {
-            musicSource.Pause();
-        }
+            if (_instance == null)
+            {
+                Debug.LogError("AudioManager instance not found.");
+                return;
+            }
 
+            _instance.musicSource.Pause();
+        }
+        
         /// <summary>
         /// Resumes the paused music.
         /// </summary>
-        public void ResumeMusic()
+        public static void ResumeMusic()
         {
-            musicSource.UnPause();
+            if (_instance == null)
+            {
+                Debug.LogError("AudioManager instance not found.");
+                return;
+            }
+
+            _instance.musicSource.UnPause();
         }
 
         /// <summary>
@@ -131,18 +155,30 @@ namespace HarmonyAudio.Scripts
         /// </summary>
         /// <param name="targetVolume">The target volume (0.0 to 1.0).</param>
         /// <param name="duration">The duration over which to fade.</param>
-        public void FadeMusicVolume(float targetVolume, float duration)
+        public static void FadeMusicVolume(float targetVolume, float duration)
         {
-            StartCoroutine(FadeMusicVolumeCoroutine(targetVolume, duration));
+            if (_instance == null)
+            {
+                Debug.LogError("AudioManager instance not found.");
+                return;
+            }
+
+            _instance.StartCoroutine(_instance.FadeMusicVolumeCoroutine(targetVolume, duration));
         }
         
         /// <summary>
         /// Gets the current music volume.
         /// </summary>
         /// <returns>The music volume (0.0 to 1.0).</returns>
-        public float GetMusicVolume()
+        public static float GetMusicVolume()
         {
-            return musicVolume;
+            if (_instance == null)
+            {
+                Debug.LogError("AudioManager instance not found.");
+                return 0f;
+            }
+
+            return _instance.musicVolume;
         }
 
         #endregion
@@ -153,15 +189,21 @@ namespace HarmonyAudio.Scripts
         /// Plays a sound effect by name.
         /// </summary>
         /// <param name="sfxClipName">The name of the sound effect clip to play.</param>
-        public void PlaySoundEffect(string sfxClipName)
+        public static void PlaySoundEffect(string sfxClipName)
         {
-            AudioClip clip = audioLibrary.GetSfxClip(sfxClipName);
+            if (_instance == null)
+            {
+                Debug.LogError("AudioManager instance not found.");
+                return;
+            }
+
+            AudioClip clip = _instance.audioLibrary.GetSfxClip(sfxClipName);
             if (clip != null)
             {
-                AudioSource availableSource = _sfxSources.Find(s => !s.isPlaying);
+                AudioSource availableSource = _instance._sfxSources.Find(s => !s.isPlaying);
                 if (availableSource != null)
                 {
-                    availableSource.volume = sfxVolume * masterVolume;
+                    availableSource.volume = _instance.sfxVolume * _instance.masterVolume;
                     availableSource.PlayOneShot(clip);
                 }
                 else
@@ -174,17 +216,22 @@ namespace HarmonyAudio.Scripts
                 Debug.LogWarning($"SFX clip named '{sfxClipName}' not found.");
             }
         }
-
         
         /// <summary>
         /// Gets the current sound effects volume.
         /// </summary>
         /// <returns>The SFX volume (0.0 to 1.0).</returns>
-        public float GetSfxVolume()
+        public static float GetSfxVolume()
         {
-            return sfxVolume;
-        }
+            if (_instance == null)
+            {
+                Debug.LogError("AudioManager instance not found.");
+                return 0f;
+            }
 
+            return _instance.sfxVolume;
+        }
+        
         #endregion
 
         #region Volume Control Methods
@@ -193,25 +240,37 @@ namespace HarmonyAudio.Scripts
         /// Sets the music volume.
         /// </summary>
         /// <param name="volume">The new volume level (0.0 to 1.0).</param>
-        public void SetMusicVolume(float volume)
+        public static void SetMusicVolume(float volume)
         {
-            musicVolume = Mathf.Clamp01(volume);
-            musicSource.volume = musicVolume * masterVolume;
+            if (_instance == null)
+            {
+                Debug.LogError("AudioManager instance not found.");
+                return;
+            }
+
+            _instance.musicVolume = Mathf.Clamp01(volume);
+            _instance.musicSource.volume = _instance.musicVolume * _instance.masterVolume;
         }
 
         /// <summary>
         /// Sets the sound effects volume.
         /// </summary>
         /// <param name="volume">The new volume level (0.0 to 1.0).</param>
-        public void SetSfxVolume(float volume)
+        public static void SetSfxVolume(float volume)
         {
-            sfxVolume = Mathf.Clamp01(volume);
-            // Update all SFX sources volumes
-            if (_sfxSources != null)
+            if (_instance == null)
             {
-                foreach (var source in _sfxSources)
+                Debug.LogError("AudioManager instance not found.");
+                return;
+            }
+
+            _instance.sfxVolume = Mathf.Clamp01(volume);
+            // Update all SFX sources volumes
+            if (_instance._sfxSources != null)
+            {
+                foreach (var source in _instance._sfxSources)
                 {
-                    source.volume = sfxVolume * masterVolume;
+                    source.volume = _instance.sfxVolume * _instance.masterVolume;
                 }
             }
         }
@@ -220,19 +279,31 @@ namespace HarmonyAudio.Scripts
         /// Sets the master volume.
         /// </summary>
         /// <param name="volume">The new master volume level (0.0 to 1.0).</param>
-        public void SetMasterVolume(float volume)
+        public static void SetMasterVolume(float volume)
         {
-            masterVolume = Mathf.Clamp01(volume);
-            UpdateAudioSourceVolumes();
+            if (_instance == null)
+            {
+                Debug.LogError("AudioManager instance not found.");
+                return;
+            }
+
+            _instance.masterVolume = Mathf.Clamp01(volume);
+            _instance.UpdateAudioSourceVolumes();
         }
 
         /// <summary>
         /// Gets the current master volume.
         /// </summary>
         /// <returns>The master volume (0.0 to 1.0).</returns>
-        public float GetMasterVolume()
+        public static float GetMasterVolume()
         {
-            return masterVolume;
+            if (_instance == null)
+            {
+                Debug.LogError("AudioManager instance not found.");
+                return 0f;
+            }
+
+            return _instance.masterVolume;
         }
         
         /// <summary>
@@ -287,21 +358,33 @@ namespace HarmonyAudio.Scripts
         /// <summary>
         /// Saves the current volume settings to PlayerPrefs.
         /// </summary>
-        public void SaveVolumeSettings()
+        public static void SaveVolumeSettings()
         {
-            PlayerPrefs.SetFloat("MasterVolume", masterVolume);
-            PlayerPrefs.SetFloat("MusicVolume", musicVolume);
-            PlayerPrefs.SetFloat("SfxVolume", sfxVolume);
+            if (_instance == null)
+            {
+                Debug.LogError("AudioManager instance not found.");
+                return;
+            }
+
+            PlayerPrefs.SetFloat("MasterVolume", _instance.masterVolume);
+            PlayerPrefs.SetFloat("MusicVolume", _instance.musicVolume);
+            PlayerPrefs.SetFloat("SfxVolume", _instance.sfxVolume);
             PlayerPrefs.Save();
         }
 
-        public void LoadVolumeSettings()
+        public static void LoadVolumeSettings()
         {
-            masterVolume = PlayerPrefs.GetFloat("MasterVolume", 1f);
-            musicVolume = PlayerPrefs.GetFloat("MusicVolume", 1f);
-            sfxVolume = PlayerPrefs.GetFloat("SfxVolume", 1f);
+            if (_instance == null)
+            {
+                Debug.LogError("AudioManager instance not found.");
+                return;
+            }
 
-            UpdateAudioSourceVolumes();
+            _instance.masterVolume = PlayerPrefs.GetFloat("MasterVolume", 1f);
+            _instance.musicVolume = PlayerPrefs.GetFloat("MusicVolume", 1f);
+            _instance.sfxVolume = PlayerPrefs.GetFloat("SfxVolume", 1f);
+
+            _instance.UpdateAudioSourceVolumes();
         }
 
         #endregion
