@@ -18,6 +18,10 @@ namespace HarmonyAudio.Demo
         public Slider masterVolumeSlider;
         public Slider musicVolumeSlider;
         public Slider sfxVolumeSlider;
+        
+        [Header("Save / Load")]
+        public Button saveButton;
+        public Button loadButton;
 
         [Header("Audio Clip Names")]
         public string musicClipName = "YourMusicClipName";
@@ -32,15 +36,23 @@ namespace HarmonyAudio.Demo
             playSfxButton.onClick.AddListener(OnPlaySFX);
             fadeInMusicButton.onClick.AddListener(OnFadeInMusic);
             fadeOutMusicButton.onClick.AddListener(OnFadeOutMusic);
+            saveButton.onClick.AddListener(OnSaveButton);
+            loadButton.onClick.AddListener(OnLoadButton);
 
             // Add listeners to sliders
             musicVolumeSlider.onValueChanged.AddListener(OnMusicVolumeChanged);
             sfxVolumeSlider.onValueChanged.AddListener(OnSFXVolumeChanged);
             masterVolumeSlider.onValueChanged.AddListener(OnMasterVolumeChanged);
             
-            // Set volumes to sliders values
-            AudioManager.Instance.SetMusicVolume(musicVolumeSlider.value);
-            AudioManager.Instance.SetSfxVolume(sfxVolumeSlider.value);
+            // Set slider values to AudioManager values
+            SetSliders();
+        }
+
+        private void SetSliders()
+        {
+            musicVolumeSlider.value = AudioManager.Instance.GetMusicVolume();
+            sfxVolumeSlider.value = AudioManager.Instance.GetSfxVolume();
+            masterVolumeSlider.value = AudioManager.Instance.GetMasterVolume();
         }
 
         private void OnPlayMusic()
@@ -86,6 +98,17 @@ namespace HarmonyAudio.Demo
         private void OnMasterVolumeChanged(float value)
         {
             AudioManager.Instance.SetMasterVolume(value);
+        }
+
+        private void OnSaveButton()
+        {
+            AudioManager.Instance.SaveVolumeSettings();
+        }
+        
+        private void OnLoadButton()
+        {
+            AudioManager.Instance.LoadVolumeSettings();
+            SetSliders();
         }
     }
 }
