@@ -1,7 +1,7 @@
 {
   "name": "com.micolash.harmonyaudio",
   "displayName": "Harmony Audio Manager",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "unity": "2022.3",
   "description": "A simple and quick-to-use audio manager for Unity.",
   "keywords": [
