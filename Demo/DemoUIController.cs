@@ -1,4 +1,5 @@
 using HarmonyAudio.Scripts;
+using HarmonyAudio.Scripts.Enums;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -22,10 +23,6 @@ namespace HarmonyAudio.Demo
         [Header("Save / Load")]
         public Button saveButton;
         public Button loadButton;
-
-        [Header("Audio Clip Names")]
-        public string musicClipName = "YourMusicClipName";
-        public string sfxClipName = "YourSFXClipName";
 
         private void Start()
         {
@@ -57,7 +54,7 @@ namespace HarmonyAudio.Demo
 
         private void OnPlayMusic()
         {
-            AudioManager.PlayMusic(musicClipName);
+            AudioManager.PlayMusic(MusicClips.JinseibyLofium);
         }
 
         private void OnPauseMusic()
@@ -72,7 +69,7 @@ namespace HarmonyAudio.Demo
 
         private void OnPlaySFX()
         {
-            AudioManager.PlaySoundEffect(sfxClipName);
+            AudioManager.PlaySoundEffect(SoundClips.UISound);
         }
 
         private void OnFadeInMusic()

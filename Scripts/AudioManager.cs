@@ -12,6 +12,7 @@
 
 using System.Collections;
 using System.Collections.Generic;
+using HarmonyAudio.Scripts.Enums;
 using UnityEngine;
 
 namespace HarmonyAudio.Scripts
@@ -82,9 +83,9 @@ namespace HarmonyAudio.Scripts
         /// <summary>
         /// Plays a music clip by name.
         /// </summary>
-        /// <param name="musicClipName">The name of the music clip to play.</param>
+        /// <param name="musicClip">The name of the music clip to play.</param>
         /// <param name="loop">Whether the music should loop.</param>
-        public static void PlayMusic(string musicClipName, bool loop = true)
+        public static void PlayMusic(MusicClips musicClip, bool loop = true)
         {
             if (_instance == null)
             {
@@ -92,7 +93,7 @@ namespace HarmonyAudio.Scripts
                 return;
             }
 
-            AudioClip clip = _instance.audioLibrary.GetMusicClip(musicClipName);
+            AudioClip clip = _instance.audioLibrary.GetMusicClip(musicClip);
             if (clip != null)
             {
                 _instance.musicSource.clip = clip;
@@ -102,9 +103,10 @@ namespace HarmonyAudio.Scripts
             }
             else
             {
-                Debug.LogWarning($"Music clip named '{musicClipName}' not found.");
+                Debug.LogWarning($"Music clip '{musicClip}' not found.");
             }
         }
+
 
         /// <summary>
         /// Stops the currently playing music.
@@ -188,8 +190,8 @@ namespace HarmonyAudio.Scripts
         /// <summary>
         /// Plays a sound effect by name.
         /// </summary>
-        /// <param name="sfxClipName">The name of the sound effect clip to play.</param>
-        public static void PlaySoundEffect(string sfxClipName)
+        /// <param name="soundClip">The name of the sound effect clip to play.</param>
+        public static void PlaySoundEffect(SoundClips soundClip)
         {
             if (_instance == null)
             {
@@ -197,7 +199,7 @@ namespace HarmonyAudio.Scripts
                 return;
             }
 
-            AudioClip clip = _instance.audioLibrary.GetSfxClip(sfxClipName);
+            AudioClip clip = _instance.audioLibrary.GetSoundClip(soundClip);
             if (clip != null)
             {
                 AudioSource availableSource = _instance._sfxSources.Find(s => !s.isPlaying);
@@ -213,9 +215,10 @@ namespace HarmonyAudio.Scripts
             }
             else
             {
-                Debug.LogWarning($"SFX clip named '{sfxClipName}' not found.");
+                Debug.LogWarning($"SFX clip '{soundClip}' not found.");
             }
         }
+
         
         /// <summary>
         /// Gets the current sound effects volume.

@@ -11,6 +11,7 @@
  */
 
 using System.Collections.Generic;
+using HarmonyAudio.Scripts.Enums;
 using UnityEngine;
 
 namespace HarmonyAudio.Scripts
@@ -26,16 +27,16 @@ namespace HarmonyAudio.Scripts
         /// A list of named music audio clips.
         /// </summary>
         [Tooltip("List of music audio clips with their associated names.")]
-        public List<NamedAudioClip> musicClips = new List<NamedAudioClip>();
+        public List<NamedMusicClip> musicClips = new List<NamedMusicClip>();
 
         /// <summary>
         /// A list of named sound effect audio clips.
         /// </summary>
         [Tooltip("List of sound effect audio clips with their associated names.")]
-        public List<NamedAudioClip> sfxClips = new List<NamedAudioClip>();
+        public List<NamedSoundClip> soundClips = new List<NamedSoundClip>();
 
-        private Dictionary<string, AudioClip> _musicClipsDict;
-        private Dictionary<string, AudioClip> _sfxClipsDict;
+        private Dictionary<MusicClips, AudioClip> _musicClipsDict;
+        private Dictionary<SoundClips, AudioClip> _soundClipsDict;
 
         private void OnEnable()
         {
@@ -48,79 +49,122 @@ namespace HarmonyAudio.Scripts
         private void InitializeDictionaries()
         {
             // Initialize the music clips dictionary
-            _musicClipsDict = new Dictionary<string, AudioClip>();
+            _musicClipsDict = new Dictionary<MusicClips, AudioClip>();
             foreach (var namedClip in musicClips)
             {
-                if (!_musicClipsDict.ContainsKey(namedClip.clipName))
-                    _musicClipsDict.Add(namedClip.clipName, namedClip.clip);
-                else
-                    Debug.LogWarning($"Duplicate music clip name '{namedClip.clipName}' found in AudioLibrary.");
+                if (namedClip.clip != null)
+                {
+                    string clipName = namedClip.clip.name;
+                    string sanitizedName = SanitizeEnumName(clipName);
+
+                    if (System.Enum.TryParse(sanitizedName, out MusicClips musicEnum))
+                    {
+                        if (!_musicClipsDict.ContainsKey(musicEnum))
+                            _musicClipsDict.Add(musicEnum, namedClip.clip);
+                        else
+                            Debug.LogWarning($"Duplicate music clip enum '{musicEnum}' found in AudioLibrary.");
+                    }
+                    else
+                    {
+                        Debug.LogWarning($"Music clip '{clipName}' does not match any enum value.");
+                    }
+                }
             }
 
             // Initialize the sound effects clips dictionary
-            _sfxClipsDict = new Dictionary<string, AudioClip>();
-            foreach (var namedClip in sfxClips)
+            _soundClipsDict = new Dictionary<SoundClips, AudioClip>();
+            foreach (var namedClip in soundClips)
             {
-                if (!_sfxClipsDict.ContainsKey(namedClip.clipName))
-                    _sfxClipsDict.Add(namedClip.clipName, namedClip.clip);
-                else
-                    Debug.LogWarning($"Duplicate SFX clip name '{namedClip.clipName}' found in AudioLibrary.");
+                if (namedClip.clip != null)
+                {
+                    string clipName = namedClip.clip.name;
+                    string sanitizedName = SanitizeEnumName(clipName);
+
+                    if (System.Enum.TryParse(sanitizedName, out SoundClips soundEnum))
+                    {
+                        if (!_soundClipsDict.ContainsKey(soundEnum))
+                            _soundClipsDict.Add(soundEnum, namedClip.clip);
+                        else
+                            Debug.LogWarning($"Duplicate sound clip enum '{soundEnum}' found in AudioLibrary.");
+                    }
+                    else
+                    {
+                        Debug.LogWarning($"Sound clip '{clipName}' does not match any enum value.");
+                    }
+                }
             }
         }
 
         /// <summary>
         /// Retrieves a music audio clip by its name.
         /// </summary>
-        /// <param name="clipName">The name of the music clip to retrieve.</param>
+        /// <param name="clipEnum">The name of the music clip to retrieve.</param>
         /// <returns>The <see cref="AudioClip"/> if found; otherwise, null.</returns>
-        public AudioClip GetMusicClip(string clipName)
+        public AudioClip GetMusicClip(MusicClips clipEnum)
         {
-            // Ensure the dictionary is initialized
             if (_musicClipsDict == null || _musicClipsDict.Count == 0)
                 InitializeDictionaries();
 
-            if (_musicClipsDict.TryGetValue(clipName, out var clip))
+            if (_musicClipsDict.TryGetValue(clipEnum, out var clip))
                 return clip;
 
-            Debug.LogWarning($"Music clip named '{clipName}' not found in AudioLibrary.");
+            Debug.LogWarning($"Music clip '{clipEnum}' not found in AudioLibrary.");
             return null;
         }
+
 
         /// <summary>
         /// Retrieves a sound effect audio clip by its name.
         /// </summary>
-        /// <param name="clipName">The name of the sound effect clip to retrieve.</param>
+        /// <param name="clipEnum">The name of the sound effect clip to retrieve.</param>
         /// <returns>The <see cref="AudioClip"/> if found; otherwise, null.</returns>
-        public AudioClip GetSfxClip(string clipName)
+        public AudioClip GetSoundClip(SoundClips clipEnum)
         {
-            // Ensure the dictionary is initialized
-            if (_sfxClipsDict == null || _sfxClipsDict.Count == 0)
+            if (_soundClipsDict == null || _soundClipsDict.Count == 0)
                 InitializeDictionaries();
 
-            if (_sfxClipsDict.TryGetValue(clipName, out var clip))
+            if (_soundClipsDict.TryGetValue(clipEnum, out var clip))
                 return clip;
 
-            Debug.LogWarning($"SFX clip named '{clipName}' not found in AudioLibrary.");
+            Debug.LogWarning($"Sound clip '{clipEnum}' not found in AudioLibrary.");
             return null;
         }
+        /// <summary>
+        /// Sanitizes a string by removing invalid characters and replacing spaces with underscores.
+        /// </summary>
+        /// <param name="clipName"></param>
+        /// <returns></returns>
+        private string SanitizeEnumName(string clipName)
+        {
+            // Remove invalid characters and replace spaces with underscores
+            string sanitized = System.Text.RegularExpressions.Regex.Replace(clipName, @"[^a-zA-Z0-9_]", "");
+
+            if (string.IsNullOrEmpty(sanitized))
+            {
+                sanitized = "Unknown";
+            }
+            else if (char.IsDigit(sanitized[0]))
+            {
+                sanitized = "_" + sanitized; // Enums cannot start with a digit
+            }
+
+            return sanitized;
+        }
+
     }
 
-    /// <summary>
-    /// Represents an audio clip with an associated name.
-    /// </summary>
     [System.Serializable]
-    public class NamedAudioClip
+    public class NamedMusicClip
     {
-        /// <summary>
-        /// The name associated with the audio clip.
-        /// </summary>
-        [Tooltip("The unique name for this audio clip.")]
-        public string clipName;
-
-        /// <summary>
-        /// The audio clip asset.
-        /// </summary>
         [Tooltip("The audio clip asset.")]
         public AudioClip clip;
     }
+
+    [System.Serializable]
+    public class NamedSoundClip
+    {
+        [Tooltip("The audio clip asset.")]
+        public AudioClip clip;
+    }
+
 }
