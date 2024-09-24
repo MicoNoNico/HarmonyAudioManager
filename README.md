@@ -29,7 +29,6 @@ Harmony is a simple and efficient audio manager for Unity that enables easy play
 3. Select the downloaded `.unitypackage` file and click **"Open"**.
 4. Import all files.
 
----
 
 ## Getting Started
 
