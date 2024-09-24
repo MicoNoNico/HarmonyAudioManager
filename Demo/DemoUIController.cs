@@ -15,6 +15,7 @@ namespace HarmonyAudio.Demo
         public Button fadeOutMusicButton;
 
         [Header("Sliders")]
+        public Slider masterVolumeSlider;
         public Slider musicVolumeSlider;
         public Slider sfxVolumeSlider;
 
@@ -35,6 +36,7 @@ namespace HarmonyAudio.Demo
             // Add listeners to sliders
             musicVolumeSlider.onValueChanged.AddListener(OnMusicVolumeChanged);
             sfxVolumeSlider.onValueChanged.AddListener(OnSFXVolumeChanged);
+            masterVolumeSlider.onValueChanged.AddListener(OnMasterVolumeChanged);
             
             // Set volumes to sliders values
             AudioManager.Instance.SetMusicVolume(musicVolumeSlider.value);
@@ -79,6 +81,11 @@ namespace HarmonyAudio.Demo
         private void OnSFXVolumeChanged(float value)
         {
             AudioManager.Instance.SetSfxVolume(value);
+        }
+        
+        private void OnMasterVolumeChanged(float value)
+        {
+            AudioManager.Instance.SetMasterVolume(value);
         }
     }
 }

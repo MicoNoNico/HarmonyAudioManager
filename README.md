@@ -30,5 +30,5 @@ Harmony is a simple and efficient audio manager for Unity that enables easy play
 
 ## Usage
 
-[Coming soon...]
+[Detailed features and usage coming soon...]
 

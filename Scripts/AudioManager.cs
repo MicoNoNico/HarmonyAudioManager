@@ -43,10 +43,12 @@ namespace HarmonyAudio.Scripts
         [SerializeField] private AudioSource musicSource;
         private AudioSource _sfxSource;
         [SerializeField] private int sfxSourcePoolSize = 10;
+
+        [SerializeField] private float _masterVolume = 1f;
+        [SerializeField] private float _musicVolume = 1f;
+        [SerializeField] private float _sfxVolume = 1f;
         
         private List<AudioSource> _sfxSources;
-        private float _musicVolume = 1f;
-        private float _sfxVolume = 1f;
         private Dictionary<string, AudioClip> _musicClipsDict;
         private Dictionary<string, AudioClip> _sfxClipsDict;
 
@@ -63,7 +65,8 @@ namespace HarmonyAudio.Scripts
             for (int i = 0; i < sfxSourcePoolSize; i++)
             {
                 AudioSource source = gameObject.AddComponent<AudioSource>();
-                source.volume = _sfxVolume;
+                source.playOnAwake = false;
+                source.volume = _sfxVolume * _masterVolume;
                 _sfxSources.Add(source);
             }
         }
@@ -84,7 +87,7 @@ namespace HarmonyAudio.Scripts
             {
                 musicSource.clip = clip;
                 musicSource.loop = loop;
-                musicSource.volume = _musicVolume;
+                musicSource.volume = _musicVolume * _masterVolume;
                 musicSource.Play();
             }
             else
@@ -92,6 +95,7 @@ namespace HarmonyAudio.Scripts
                 Debug.LogWarning($"Music clip named '{musicClipName}' not found.");
             }
         }
+
 
         /// <summary>
         /// Stops the currently playing music.
@@ -154,7 +158,7 @@ namespace HarmonyAudio.Scripts
                 AudioSource availableSource = _sfxSources.Find(s => !s.isPlaying);
                 if (availableSource != null)
                 {
-                    availableSource.volume = _sfxVolume;
+                    availableSource.volume = _sfxVolume * _masterVolume;
                     availableSource.PlayOneShot(clip);
                 }
                 else
@@ -167,6 +171,7 @@ namespace HarmonyAudio.Scripts
                 Debug.LogWarning($"SFX clip named '{sfxClipName}' not found.");
             }
         }
+
         
         /// <summary>
         /// Gets the current sound effects volume.
@@ -188,7 +193,7 @@ namespace HarmonyAudio.Scripts
         public void SetMusicVolume(float volume)
         {
             _musicVolume = Mathf.Clamp01(volume);
-            musicSource.volume = _musicVolume;
+            musicSource.volume = _musicVolume * _masterVolume;
         }
 
         /// <summary>
@@ -198,6 +203,51 @@ namespace HarmonyAudio.Scripts
         public void SetSfxVolume(float volume)
         {
             _sfxVolume = Mathf.Clamp01(volume);
+            // Update all SFX sources volumes
+            if (_sfxSources != null)
+            {
+                foreach (var source in _sfxSources)
+                {
+                    source.volume = _sfxVolume * _masterVolume;
+                }
+            }
+        }
+        
+        /// <summary>
+        /// Sets the master volume.
+        /// </summary>
+        /// <param name="volume">The new master volume level (0.0 to 1.0).</param>
+        public void SetMasterVolume(float volume)
+        {
+            _masterVolume = Mathf.Clamp01(volume);
+            UpdateAudioSourceVolumes();
+        }
+
+        /// <summary>
+        /// Gets the current master volume.
+        /// </summary>
+        /// <returns>The master volume (0.0 to 1.0).</returns>
+        public float GetMasterVolume()
+        {
+            return _masterVolume;
+        }
+        
+        /// <summary>
+        /// Updates the volume of all AudioSources based on individual and master volumes.
+        /// </summary>
+        private void UpdateAudioSourceVolumes()
+        {
+            // Update music source volume
+            musicSource.volume = _musicVolume * _masterVolume;
+
+            // Update all SFX sources volumes
+            if (_sfxSources != null)
+            {
+                foreach (var source in _sfxSources)
+                {
+                    source.volume = _sfxVolume * _masterVolume;
+                }
+            }
         }
 
         #endregion
@@ -217,14 +267,15 @@ namespace HarmonyAudio.Scripts
             while (timer < duration)
             {
                 timer += Time.deltaTime;
-                float newVolume = Mathf.Lerp(startVolume, targetVolume, timer / duration);
-                musicSource.volume = newVolume;
+                _musicVolume = Mathf.Lerp(startVolume, targetVolume, timer / duration);
+                musicSource.volume = _musicVolume * _masterVolume;
                 yield return null;
             }
 
-            musicSource.volume = targetVolume;
             _musicVolume = targetVolume;
+            musicSource.volume = _musicVolume * _masterVolume;
         }
+
 
         #endregion
 
@@ -235,6 +286,7 @@ namespace HarmonyAudio.Scripts
         /// </summary>
         public void SaveVolumeSettings()
         {
+            PlayerPrefs.SetFloat("MasterVolume", _masterVolume);
             PlayerPrefs.SetFloat("MusicVolume", _musicVolume);
             PlayerPrefs.SetFloat("SfxVolume", _sfxVolume);
             PlayerPrefs.Save();
@@ -245,18 +297,10 @@ namespace HarmonyAudio.Scripts
         /// </summary>
         public void LoadVolumeSettings()
         {
+            _masterVolume = PlayerPrefs.GetFloat("MasterVolume", 1f);
             _musicVolume = PlayerPrefs.GetFloat("MusicVolume", 1f);
             _sfxVolume = PlayerPrefs.GetFloat("SfxVolume", 1f);
-            musicSource.volume = _musicVolume;
-
-            // Update all sfxSources if using pooling
-            if (_sfxSources != null)
-            {
-                foreach (var source in _sfxSources)
-                {
-                    source.volume = _sfxVolume;
-                }
-            }
+            UpdateAudioSourceVolumes();
         }
 
         #endregion
