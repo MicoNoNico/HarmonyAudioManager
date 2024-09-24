@@ -19,7 +19,7 @@ Harmony is a simple and efficient audio manager for Unity that enables easy play
 2. Navigate to **Window > Package Manager**.
 3. Click the **"+"** button and select **"Add package from git URL..."**.
 4. Enter the following URL:
-```https://github.com/MicoNoNico/HarmonyAudioManager.git#1.0.1```
+```https://github.com/MicoNoNico/HarmonyAudioManager.git#main```
 5. Click **"Add"**.
 
 ### Via Unity Package (`.unitypackage`)
