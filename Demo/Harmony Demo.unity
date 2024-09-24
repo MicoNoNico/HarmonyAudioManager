@@ -332,8 +332,6 @@ MonoBehaviour:
   sfxVolumeSlider: {fileID: 479898785}
   saveButton: {fileID: 1462348165}
   loadButton: {fileID: 1037568230}
-  musicClipName: Jinsei
-  sfxClipName: UISound
 --- !u!4 &112723544
 Transform:
   m_ObjectHideFlags: 0
@@ -3615,7 +3613,7 @@ AudioSource:
   serializedVersion: 4
   OutputAudioMixerGroup: {fileID: 0}
   m_audioClip: {fileID: 0}
-  m_PlayOnAwake: 1
+  m_PlayOnAwake: 0
   m_Volume: 0.25
   m_Pitch: 1
   Loop: 0

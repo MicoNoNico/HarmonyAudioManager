@@ -112,7 +112,6 @@ namespace HarmonyAudio.Scripts
             return null;
         }
 
-
         /// <summary>
         /// Retrieves a sound effect audio clip by its name.
         /// </summary>
