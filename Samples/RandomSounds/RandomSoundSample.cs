@@ -3,42 +3,32 @@ using HarmonyAudio.Scripts.Enums;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace HarmonyAudio.Samples.Simple_Volume
+namespace HarmonyAudio.Samples.RandomSounds
 {
-    public class SimpleVolumeSample : MonoBehaviour
+    public class RandomSoundSample : MonoBehaviour
     {
         [Header("Buttons")]
         public Button playMusicButton;
-        public Button pauseMusicButton;
         public Button stopMusicButton;
-        public Button playSoundButton;
-        public Button fadeInMusicButton;
-        public Button fadeOutMusicButton;
 
+        public Button playSoundButton;
+        
         [Header("Sliders")]
         public Slider masterVolumeSlider;
         public Slider musicVolumeSlider;
-        public Slider soundsVolumeSlider;
-        
-        [Header("Save / Load")]
-        public Button saveButton;
-        public Button loadButton;
+        public Slider soundVolumeSlider;
 
         private void Start()
         {
             // Add listeners to buttons
             playMusicButton.onClick.AddListener(OnPlayMusic);
-            pauseMusicButton.onClick.AddListener(OnPauseMusic);
             stopMusicButton.onClick.AddListener(OnStopMusic);
+            
             playSoundButton.onClick.AddListener(OnPlaySound);
-            fadeInMusicButton.onClick.AddListener(OnFadeInMusic);
-            fadeOutMusicButton.onClick.AddListener(OnFadeOutMusic);
-            saveButton.onClick.AddListener(OnSaveButton);
-            loadButton.onClick.AddListener(OnLoadButton);
-
+            
             // Add listeners to sliders
             musicVolumeSlider.onValueChanged.AddListener(OnMusicVolumeChanged);
-            soundsVolumeSlider.onValueChanged.AddListener(OnSFXVolumeChanged);
+            soundVolumeSlider.onValueChanged.AddListener(OnSoundVolumeChanged);
             masterVolumeSlider.onValueChanged.AddListener(OnMasterVolumeChanged);
             
             // Set slider values to AudioManager values
@@ -48,7 +38,7 @@ namespace HarmonyAudio.Samples.Simple_Volume
         private void SetSliders()
         {
             musicVolumeSlider.value = AudioManager.GetMusicVolume();
-            soundsVolumeSlider.value = AudioManager.GetSoundVolume();
+            soundVolumeSlider.value = AudioManager.GetSoundVolume();
             masterVolumeSlider.value = AudioManager.GetMasterVolume();
         }
 
@@ -57,37 +47,22 @@ namespace HarmonyAudio.Samples.Simple_Volume
             AudioManager.PlayMusic(MusicClips.Jinsei);
         }
 
-        private void OnPauseMusic()
-        {
-            AudioManager.PauseMusic();
-        }
-
         private void OnStopMusic()
         {
             AudioManager.StopMusic();
         }
-
+        
         private void OnPlaySound()
         {
-            AudioManager.PlaySound(SoundClips.UISound);
+            AudioManager.PlayRandomSound(SoundClips.Footsteps);
         }
-
-        private void OnFadeInMusic()
-        {
-            AudioManager.FadeMusicVolume(musicVolumeSlider.value, 1);
-        }
-
-        private void OnFadeOutMusic()
-        {
-            AudioManager.FadeMusicVolume(0f, 1);
-        }
-
+        
         private void OnMusicVolumeChanged(float value)
         {
             AudioManager.SetMusicVolume(value);
         }
 
-        private void OnSFXVolumeChanged(float value)
+        private void OnSoundVolumeChanged(float value)
         {
             AudioManager.SetSoundVolume(value);
         }
@@ -95,17 +70,6 @@ namespace HarmonyAudio.Samples.Simple_Volume
         private void OnMasterVolumeChanged(float value)
         {
             AudioManager.SetMasterVolume(value);
-        }
-
-        private void OnSaveButton()
-        {
-            AudioManager.SaveVolumeSettings();
-        }
-        
-        private void OnLoadButton()
-        {
-            AudioManager.LoadVolumeSettings();
-            SetSliders();
         }
     }
 }

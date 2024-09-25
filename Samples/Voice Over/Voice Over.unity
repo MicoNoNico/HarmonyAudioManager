@@ -3519,7 +3519,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: Make sure your audio isn't muted!
+  m_Text: 'Sample: Voice Extension'
 --- !u!1 &1808974430
 GameObject:
   m_ObjectHideFlags: 0

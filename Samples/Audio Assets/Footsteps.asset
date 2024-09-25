@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7cba0a527d8040eea04de2ac3874cb37, type: 3}
+  m_Name: Footsteps
+  m_EditorClassIdentifier: 
+  allowMultipleClips: 1
+  singleClip: {fileID: 0}
+  multipleClips:
+  - {fileID: 8300000, guid: aa03bff7cf0091e4e9af33a81bbb0df2, type: 3}
+  - {fileID: 8300000, guid: 003e2fa113af5e4489981b020a6d7d2d, type: 3}
+  - {fileID: 8300000, guid: c023fc8253f7a4c4c863c994fd62829e, type: 3}
+  - {fileID: 8300000, guid: b482a11c4bc3ab04aa069579f3e162f8, type: 3}
+  - {fileID: 8300000, guid: e5f560a532d81b148a41f15cf6b5e897, type: 3}

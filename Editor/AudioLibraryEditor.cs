@@ -11,16 +11,15 @@ namespace HarmonyAudio.Editor
     [CustomEditor(typeof(AudioLibrary))]
     public class AudioLibraryEditor : UnityEditor.Editor
     {
-        private SerializedProperty _musicClipsProp;
-        private SerializedProperty _soundClipsProp;
-        private SerializedProperty _voiceClipsProp;
+        private SerializedProperty _musicAssetsProp;
+        private SerializedProperty _soundAssetsProp;
+        private SerializedProperty _voiceAssetsProp;
 
         private void OnEnable()
         {
-            // Cache the serialized properties
-            _musicClipsProp = serializedObject.FindProperty("musicClips");
-            _soundClipsProp = serializedObject.FindProperty("soundClips");
-            _voiceClipsProp = serializedObject.FindProperty("voiceClips");
+            _musicAssetsProp = serializedObject.FindProperty("musicAssets");
+            _soundAssetsProp = serializedObject.FindProperty("soundAssets");
+            _voiceAssetsProp = serializedObject.FindProperty("voiceAssets");
         }
         
         public override void OnInspectorGUI()
@@ -31,10 +30,10 @@ namespace HarmonyAudio.Editor
             var audioManager = FindObjectOfType<AudioManager>();
 
             // Draw music clips field
-            EditorGUILayout.PropertyField(_musicClipsProp, true);
+            EditorGUILayout.PropertyField(_musicAssetsProp, true);
 
             // Draw sound effects clips field
-            EditorGUILayout.PropertyField(_soundClipsProp, true);
+            EditorGUILayout.PropertyField(_soundAssetsProp, true);
 
             bool voiceEnabled = false;
             if (audioManager != null)
@@ -46,7 +45,7 @@ namespace HarmonyAudio.Editor
             if (voiceEnabled)
             {
                 EditorGUILayout.Space();
-                EditorGUILayout.PropertyField(_voiceClipsProp, true);
+                EditorGUILayout.PropertyField(_voiceAssetsProp, true);
             }
 
             serializedObject.ApplyModifiedProperties();
@@ -68,15 +67,15 @@ namespace HarmonyAudio.Editor
                 Directory.CreateDirectory(enumDirectory);
             }
 
-            GenerateEnumFile(enumDirectory, "MusicClips", audioLibrary.musicClips);
-            GenerateEnumFile(enumDirectory, "SoundClips", audioLibrary.soundClips);
-            GenerateEnumFile(enumDirectory, "VoiceClips", audioLibrary.voiceClips);
+            GenerateEnumFile(enumDirectory, "MusicClips", audioLibrary.musicAssets);
+            GenerateEnumFile(enumDirectory, "SoundClips", audioLibrary.soundAssets);
+            GenerateEnumFile(enumDirectory, "VoiceClips", audioLibrary.voiceAssets);
 
             AssetDatabase.Refresh();
             Debug.Log("Library regenerated successfully.");
         }
 
-        private void GenerateEnumFile<T>(string directory, string enumName, List<T> clips) where T : class
+        private void GenerateEnumFile(string directory, string enumName, List<AudioAsset> assets)
         {
             StringBuilder sb = new StringBuilder();
             sb.AppendLine("namespace HarmonyAudio.Scripts.Enums");
@@ -84,27 +83,11 @@ namespace HarmonyAudio.Editor
             sb.AppendLine($"\tpublic enum {enumName}");
             sb.AppendLine("\t{");
 
-            foreach (var clip in clips)
+            foreach (var asset in assets)
             {
-                AudioClip audioClip = null;
-
-                if (typeof(T) == typeof(NamedMusicClip))
+                if (asset != null)
                 {
-                    audioClip = (clip as NamedMusicClip).clip;
-                }
-                else if (typeof(T) == typeof(NamedSoundClip))
-                {
-                    audioClip = (clip as NamedSoundClip).clip;
-                }
-                else if (typeof(T) == typeof(NamedVoiceClip))
-                {
-                    audioClip = (clip as NamedVoiceClip).clip;
-                }
-
-                if (audioClip != null)
-                {
-                    string clipName = audioClip.name;
-                    string sanitizedName = SanitizeEnumName(clipName);
+                    string sanitizedName = SanitizeEnumName(asset.name);
                     sb.AppendLine($"\t\t{sanitizedName},");
                 }
             }
@@ -115,7 +98,6 @@ namespace HarmonyAudio.Editor
             string filePath = Path.Combine(directory, $"{enumName}.cs");
             File.WriteAllText(filePath, sb.ToString());
         }
-
 
         private string SanitizeEnumName(string clipName)
         {

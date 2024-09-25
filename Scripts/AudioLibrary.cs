@@ -27,20 +27,23 @@ namespace HarmonyAudio.Scripts
         /// A list of named music audio clips.
         /// </summary>
         [Tooltip("List of music audio clips with their associated names.")]
-        public List<NamedMusicClip> musicClips = new List<NamedMusicClip>();
+        public List<AudioAsset> musicAssets = new List<AudioAsset>();
 
         /// <summary>
         /// A list of named sound effect audio clips.
         /// </summary>
         [Tooltip("List of sound effect audio clips with their associated names.")]
-        public List<NamedSoundClip> soundClips = new List<NamedSoundClip>();
+        public List<AudioAsset> soundAssets = new List<AudioAsset>();
         
+        /// <summary>
+        /// A list of named voice audio clips.
+        /// </summary>
         [Tooltip("List of voice audio clips (only visible if VoiceManager is added).")]
-        public List<NamedVoiceClip> voiceClips = new List<NamedVoiceClip>();
+        public List<AudioAsset> voiceAssets = new List<AudioAsset>();
 
-        private Dictionary<MusicClips, AudioClip> _musicClipsDict;
-        private Dictionary<SoundClips, AudioClip> _soundClipsDict;
-        private Dictionary<VoiceClips, AudioClip> _voiceClipsDict;
+        private Dictionary<MusicClips, AudioAsset> _musicAssetsDict;
+        private Dictionary<SoundClips, AudioAsset> _soundAssetsDict;
+        private Dictionary<VoiceClips, AudioAsset> _voiceAssetsDict;
 
         private void OnEnable()
         {
@@ -52,74 +55,47 @@ namespace HarmonyAudio.Scripts
         /// </summary>
         private void InitializeDictionaries()
         {
-            // Initialize the music clips dictionary
-            _musicClipsDict = new Dictionary<MusicClips, AudioClip>();
-            foreach (var namedClip in musicClips)
-            {
-                if (namedClip.clip != null)
-                {
-                    string clipName = namedClip.clip.name;
-                    string sanitizedName = SanitizeEnumName(clipName);
+            // Initialize music assets dictionary
+            _musicAssetsDict = InitializeAssetDictionary<MusicClips>(musicAssets);
 
-                    if (System.Enum.TryParse(sanitizedName, out MusicClips musicEnum))
+            // Initialize sound assets dictionary
+            _soundAssetsDict = InitializeAssetDictionary<SoundClips>(soundAssets);
+
+            // Initialize voice assets dictionary
+            _voiceAssetsDict = InitializeAssetDictionary<VoiceClips>(voiceAssets);
+        }
+        
+        /// <summary>
+        /// Initializes a dictionary from a list of audio assets.
+        /// </summary>
+        /// <param name="assets"></param>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
+        private Dictionary<T, AudioAsset> InitializeAssetDictionary<T>(List<AudioAsset> assets) where T : struct, System.IConvertible
+        {
+            if (!typeof(T).IsEnum)
+            {
+                Debug.LogError($"{typeof(T)} is not an enum type.");
+                return null;
+            }
+
+            var dict = new Dictionary<T, AudioAsset>();
+            foreach (var asset in assets)
+            {
+                if (asset != null)
+                {
+                    string sanitizedName = SanitizeEnumName(asset.name);
+                    if (System.Enum.IsDefined(typeof(T), sanitizedName))
                     {
-                        if (!_musicClipsDict.ContainsKey(musicEnum))
-                            _musicClipsDict.Add(musicEnum, namedClip.clip);
-                        else
-                            Debug.LogWarning($"Duplicate music clip enum '{musicEnum}' found in AudioLibrary.");
-                    }
-                    else
-                    {
-                        Debug.LogWarning($"Music clip '{clipName}' does not match any enum value.");
+                        T enumValue = (T)System.Enum.Parse(typeof(T), sanitizedName);
+                        if (!dict.ContainsKey(enumValue))
+                        {
+                            dict.Add(enumValue, asset);
+                        }
                     }
                 }
             }
-
-            // Initialize the sound effects clips dictionary
-            _soundClipsDict = new Dictionary<SoundClips, AudioClip>();
-            foreach (var namedClip in soundClips)
-            {
-                if (namedClip.clip != null)
-                {
-                    string clipName = namedClip.clip.name;
-                    string sanitizedName = SanitizeEnumName(clipName);
-
-                    if (System.Enum.TryParse(sanitizedName, out SoundClips soundEnum))
-                    {
-                        if (!_soundClipsDict.ContainsKey(soundEnum))
-                            _soundClipsDict.Add(soundEnum, namedClip.clip);
-                        else
-                            Debug.LogWarning($"Duplicate sound clip enum '{soundEnum}' found in AudioLibrary.");
-                    }
-                    else
-                    {
-                        Debug.LogWarning($"Sound clip '{clipName}' does not match any enum value.");
-                    }
-                }
-            }
-            
-            // Initialize the voice clips dictionary
-            _voiceClipsDict = new Dictionary<VoiceClips, AudioClip>();
-            foreach (var namedClip in voiceClips)
-            {
-                if (namedClip.clip != null)
-                {
-                    string clipName = namedClip.clip.name;
-                    string sanitizedName = SanitizeEnumName(clipName);
-                    
-                    if (System.Enum.TryParse(sanitizedName, out VoiceClips voiceEnum))
-                    {
-                        if (!_voiceClipsDict.ContainsKey(voiceEnum))
-                            _voiceClipsDict.Add(voiceEnum, namedClip.clip);
-                        else
-                            Debug.LogWarning($"Duplicate voice clip enum '{voiceEnum}' found in AudioLibrary.");
-                    }
-                    else
-                    {
-                        Debug.LogWarning($"Voice clip '{clipName}' does not match any enum value.");
-                    }
-                }
-            }
+            return dict;
         }
 
         /// <summary>
@@ -127,15 +103,15 @@ namespace HarmonyAudio.Scripts
         /// </summary>
         /// <param name="clipEnum">The name of the music clip to retrieve.</param>
         /// <returns>The <see cref="AudioClip"/> if found; otherwise, null.</returns>
-        public AudioClip GetMusicClip(MusicClips clipEnum)
+        public AudioAsset GetMusicAsset(MusicClips clipEnum)
         {
-            if (_musicClipsDict == null || _musicClipsDict.Count == 0)
+            if (_musicAssetsDict == null || _musicAssetsDict.Count == 0)
                 InitializeDictionaries();
 
-            if (_musicClipsDict.TryGetValue(clipEnum, out var clip))
-                return clip;
+            if (_musicAssetsDict.TryGetValue(clipEnum, out var asset))
+                return asset;
 
-            Debug.LogWarning($"Music clip '{clipEnum}' not found in AudioLibrary.");
+            Debug.LogWarning($"Music asset '{clipEnum}' not found in AudioLibrary.");
             return null;
         }
 
@@ -144,15 +120,15 @@ namespace HarmonyAudio.Scripts
         /// </summary>
         /// <param name="clipEnum">The name of the sound effect clip to retrieve.</param>
         /// <returns>The <see cref="AudioClip"/> if found; otherwise, null.</returns>
-        public AudioClip GetSoundClip(SoundClips clipEnum)
+        public AudioAsset GetSoundAsset(SoundClips clipEnum)
         {
-            if (_soundClipsDict == null || _soundClipsDict.Count == 0)
+            if (_soundAssetsDict == null || _soundAssetsDict.Count == 0)
                 InitializeDictionaries();
 
-            if (_soundClipsDict.TryGetValue(clipEnum, out var clip))
-                return clip;
+            if (_soundAssetsDict.TryGetValue(clipEnum, out var asset))
+                return asset;
 
-            Debug.LogWarning($"Sound clip '{clipEnum}' not found in AudioLibrary.");
+            Debug.LogWarning($"Sound asset '{clipEnum}' not found in AudioLibrary.");
             return null;
         }
 
@@ -161,15 +137,15 @@ namespace HarmonyAudio.Scripts
         /// </summary>
         /// <param name="clipEnum">The name of the voice clip to retrieve.</param>
         /// <returns>The <see cref="AudioClip"/> if found; otherwise, null.</returns>
-        public AudioClip GetVoiceClip(VoiceClips clipEnum)
+        public AudioAsset GetVoiceAsset(VoiceClips clipEnum)
         {
-            if (_voiceClipsDict == null || _voiceClipsDict.Count == 0)
+            if (_voiceAssetsDict == null || _voiceAssetsDict.Count == 0)
                 InitializeDictionaries();
-            
-            if (_voiceClipsDict.TryGetValue(clipEnum, out var clip))
-                return clip;
-            
-            Debug.LogWarning($"Voice clip '{clipEnum}' not found in AudioLibrary.");
+
+            if (_voiceAssetsDict.TryGetValue(clipEnum, out var asset))
+                return asset;
+
+            Debug.LogWarning($"Voice asset '{clipEnum}' not found in AudioLibrary.");
             return null;
         }
         
@@ -195,26 +171,11 @@ namespace HarmonyAudio.Scripts
             return sanitized;
         }
     }
-
-    [System.Serializable]
-    public class NamedMusicClip
-    {
-        [Tooltip("The audio clip asset.")]
-        public AudioClip clip;
-    }
-
-    [System.Serializable]
-    public class NamedSoundClip
-    {
-        [Tooltip("The audio clip asset.")]
-        public AudioClip clip;
-    }
     
     [System.Serializable]
-    public class NamedVoiceClip
+    public class NamedSoundGroup
     {
-        [Tooltip("The audio clip asset.")]
-        public AudioClip clip;
+        public AudioAsset group;
     }
 
 }

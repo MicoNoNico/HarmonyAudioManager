@@ -54,7 +54,7 @@ namespace HarmonyAudio.Samples.Voice_Over
 
         private void OnPlayMusic()
         {
-            AudioManager.PlayMusic(MusicClips.JinseibyLofium);
+            AudioManager.PlayMusic(MusicClips.Jinsei);
         }
 
         private void OnStopMusic()
@@ -79,7 +79,7 @@ namespace HarmonyAudio.Samples.Voice_Over
 
         private void OnPlayVoice()
         {
-            AudioManager.PlayVoice(VoiceClips.VoiceoverSample);
+            AudioManager.PlayVoice(VoiceClips.Dialogue);
         }
 
         private void OnPauseVoice()

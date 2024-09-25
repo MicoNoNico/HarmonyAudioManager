@@ -111,17 +111,62 @@ namespace HarmonyAudio.Scripts
                 return;
             }
 
-            AudioClip clip = _instance.audioLibrary.GetMusicClip(musicClip);
-            if (clip != null)
+            AudioAsset asset = _instance.audioLibrary.GetMusicAsset(musicClip);
+            if (asset != null)
             {
-                _instance.musicSource.clip = clip;
-                _instance.musicSource.loop = loop;
-                _instance.musicSource.volume = _instance.musicVolume * _instance.masterVolume;
-                _instance.musicSource.Play();
+                AudioClip clip = GetClipFromAsset(asset);
+
+                if (clip != null)
+                {
+                    _instance.musicSource.clip = clip;
+                    _instance.musicSource.loop = loop;
+                    _instance.musicSource.volume = _instance.musicVolume * _instance.masterVolume;
+                    _instance.musicSource.Play();
+                }
+                else
+                {
+                    Debug.LogWarning($"No clip found in AudioAsset '{musicClip}'.");
+                }
             }
             else
             {
-                Debug.LogWarning($"Music clip '{musicClip}' not found.");
+                Debug.LogWarning($"Music asset '{musicClip}' not found.");
+            }
+        }
+
+        /// <summary>
+        /// Plays a random music clip from an array.
+        /// </summary>
+        /// <param name="musicClip">The array of music clips to choose from.</param>
+        /// <param name="loop">Whether the music should loop.</param>
+        public static void PlayRandomMusic(MusicClips musicClip, bool loop = true)
+        {
+            if (_instance == null)
+            {
+                Debug.LogError("AudioManager instance not found.");
+                return;
+            }
+
+            AudioAsset asset = _instance.audioLibrary.GetMusicAsset(musicClip);
+            if (asset != null)
+            {
+                AudioClip randomClip = GetRandomClipFromAsset(asset);
+
+                if (randomClip != null)
+                {
+                    _instance.musicSource.clip = randomClip;
+                    _instance.musicSource.loop = loop;
+                    _instance.musicSource.volume = _instance.musicVolume * _instance.masterVolume;
+                    _instance.musicSource.Play();
+                }
+                else
+                {
+                    Debug.LogWarning($"No clip found in AudioAsset '{musicClip}' to play.");
+                }
+            }
+            else
+            {
+                Debug.LogWarning($"Sound asset '{musicClip}' not found.");
             }
         }
 
@@ -209,7 +254,7 @@ namespace HarmonyAudio.Scripts
         /// Plays a sound effect by name.
         /// </summary>
         /// <param name="soundClip">The name of the sound effect clip to play.</param>
-        public static void PlaySoundEffect(SoundClips soundClip)
+        public static void PlaySound(SoundClips soundClip)
         {
             if (_instance == null)
             {
@@ -217,26 +262,71 @@ namespace HarmonyAudio.Scripts
                 return;
             }
 
-            AudioClip clip = _instance.audioLibrary.GetSoundClip(soundClip);
-            if (clip != null)
+            AudioAsset asset = _instance.audioLibrary.GetSoundAsset(soundClip);
+            if (asset != null)
             {
-                AudioSource availableSource = _instance._soundSources.Find(s => !s.isPlaying);
-                if (availableSource != null)
+                AudioClip clip = GetClipFromAsset(asset);
+
+                if (clip != null)
                 {
-                    availableSource.volume = _instance.soundsVolume * _instance.masterVolume;
-                    availableSource.PlayOneShot(clip);
+                    AudioSource availableSource = _instance._soundSources.Find(s => !s.isPlaying);
+                    if (availableSource != null)
+                    {
+                        availableSource.volume = _instance.soundsVolume * _instance.masterVolume;
+                        availableSource.PlayOneShot(clip);
+                    }
+                    else
+                    {
+                        Debug.LogWarning("All SFX AudioSources are busy.");
+                    }
                 }
                 else
                 {
-                    Debug.LogWarning("All SFX AudioSources are busy.");
+                    Debug.LogWarning($"No clip found in AudioAsset '{soundClip}'.");
                 }
             }
             else
             {
-                Debug.LogWarning($"SFX clip '{soundClip}' not found.");
+                Debug.LogWarning($"Sound asset '{soundClip}' not found.");
             }
         }
 
+        public static void PlayRandomSound(SoundClips soundClip)
+        {
+            if (_instance == null)
+            {
+                Debug.LogError("AudioManager instance not found.");
+                return;
+            }
+
+            AudioAsset asset = _instance.audioLibrary.GetSoundAsset(soundClip);
+            if (asset != null)
+            {
+                AudioClip randomClip = GetRandomClipFromAsset(asset);
+
+                if (randomClip != null)
+                {
+                    AudioSource availableSource = _instance._soundSources.Find(s => !s.isPlaying);
+                    if (availableSource != null)
+                    {
+                        availableSource.volume = _instance.soundsVolume * _instance.masterVolume;
+                        availableSource.PlayOneShot(randomClip);
+                    }
+                    else
+                    {
+                        Debug.LogWarning("All Sound AudioSources are busy.");
+                    }
+                }
+                else
+                {
+                    Debug.LogWarning($"No clip found in AudioAsset '{soundClip}' to play.");
+                }
+            }
+            else
+            {
+                Debug.LogWarning($"Sound asset '{soundClip}' not found.");
+            }
+        }
         
         /// <summary>
         /// Gets the current sound effects volume.
@@ -277,7 +367,7 @@ namespace HarmonyAudio.Scripts
         /// Sets the sound effects volume.
         /// </summary>
         /// <param name="volume">The new volume level (0.0 to 1.0).</param>
-        public static void SetSfxVolume(float volume)
+        public static void SetSoundVolume(float volume)
         {
             if (_instance == null)
             {
@@ -479,34 +569,98 @@ namespace HarmonyAudio.Scripts
                 return;
             }
 
-            AudioClip clip = _instance.audioLibrary.GetVoiceClip(voiceClip);
-            if (clip != null)
+            AudioAsset asset = _instance.audioLibrary.GetVoiceAsset(voiceClip);
+            if (asset != null)
             {
-                AudioSource availableSource = _instance._voiceSources.Find(s => !s.isPlaying);
-                if (availableSource != null)
+                AudioClip clip = GetClipFromAsset(asset);
+
+                if (clip != null)
                 {
-                    availableSource.clip = clip;
-                    availableSource.loop = loop;
-                    availableSource.volume = _instance.voiceVolume * _instance.masterVolume;
-                    availableSource.Play();
+                    // Find an available voice source
+                    AudioSource availableSource = _instance._voiceSources.Find(s => !s.isPlaying);
+                    if (availableSource != null)
+                    {
+                        availableSource.clip = clip;
+                        availableSource.loop = loop;
+                        availableSource.volume = _instance.voiceVolume * _instance.masterVolume;
+                        availableSource.Play();
+                    }
+                    else
+                    {
+                        Debug.LogWarning("All Voice AudioSources are busy.");
+                        // TODO: expand the pool or replace the oldest playing source
+                        // AudioSource newSource = _instance.gameObject.AddComponent<AudioSource>();
+                        // newSource.playOnAwake = false;
+                        // newSource.volume = _instance.voiceVolume * _instance.masterVolume;
+                        // _instance._voiceSources.Add(newSource);
+                        // 
+                        // newSource.clip = clip;
+                        // newSource.loop = loop;
+                        // newSource.Play();    
+                    }
                 }
                 else
                 {
-                    Debug.LogWarning("All Voice AudioSources are busy.");
-                    // TODO: expand the pool or replace the oldest playing source
-                    // AudioSource newSource = _instance.gameObject.AddComponent<AudioSource>();
-                    // newSource.playOnAwake = false;
-                    // newSource.volume = _instance.voiceVolume * _instance.masterVolume;
-                    // _instance._voiceSources.Add(newSource);
-// 
-                    // newSource.clip = clip;
-                    // newSource.loop = loop;
-                    // newSource.Play();
+                    Debug.LogWarning($"No clip found in AudioAsset '{voiceClip}'.");
                 }
             }
             else
             {
-                Debug.LogWarning($"Voice clip '{voiceClip}' not found.");
+                Debug.LogWarning($"Voice asset '{voiceClip}' not found.");
+            }
+        }
+        
+        public static void PlayRandomVoice(VoiceClips voiceClip, bool loop = false)
+        {
+            if (_instance == null)
+            {
+                Debug.LogError("AudioManager instance not found.");
+                return;
+            }
+            
+            if (!_instance.enableVoice)
+            {
+                Debug.LogWarning("Voice Extension is not enabled.");
+                return;
+            }
+
+            AudioAsset asset = _instance.audioLibrary.GetVoiceAsset(voiceClip);
+            if (asset != null)
+            {
+                AudioClip randomClip = GetRandomClipFromAsset(asset);
+
+                if (randomClip != null)
+                {
+                    AudioSource availableSource = _instance._voiceSources.Find(s => !s.isPlaying);
+                    if (availableSource != null)
+                    {
+                        availableSource.clip = randomClip;
+                        availableSource.loop = loop;
+                        availableSource.volume = _instance.voiceVolume * _instance.masterVolume;
+                        availableSource.Play();
+                    }
+                    else
+                    {
+                        Debug.LogWarning("All Voice AudioSources are busy.");
+                        // TODO: expand the pool or replace the oldest playing source
+                        // AudioSource newSource = _instance.gameObject.AddComponent<AudioSource>();
+                        // newSource.playOnAwake = false;
+                        // newSource.volume = _instance.voiceVolume * _instance.masterVolume;
+                        // _instance._voiceSources.Add(newSource);
+                        // 
+                        // newSource.clip = clip;
+                        // newSource.loop = loop;
+                        // newSource.Play();    
+                    }
+                }
+                else
+                {
+                    Debug.LogWarning($"No clip found in AudioAsset '{voiceClip}' to play.");
+                }
+            }
+            else
+            {
+                Debug.LogWarning($"Sound asset '{voiceClip}' not found.");
             }
         }
 
@@ -672,6 +826,45 @@ namespace HarmonyAudio.Scripts
             _instance.StartCoroutine(_instance.FadeVoiceVolumeCoroutine(targetVolume, duration));
         }
         
+        #endregion
+        
+        #region Helper Methods
+        
+        private static AudioClip GetClipFromAsset(AudioAsset asset)
+        {
+            if (asset.allowMultipleClips)
+            {
+                if (asset.multipleClips.Count > 0)
+                {
+                    int randomIndex = Random.Range(0, asset.multipleClips.Count);
+                    return asset.multipleClips[randomIndex];
+                }
+            }
+            else
+            {
+                return asset.singleClip;
+            }
+            return null;
+        }
+        
+        /// <summary>
+        /// Gets a random clip from the AudioAsset, if it has multiple clips.
+        /// </summary>
+        /// <param name="asset">The AudioAsset to retrieve a random clip from.</param>
+        /// <returns>A random AudioClip, or null if the asset is empty or invalid.</returns>
+        private static AudioClip GetRandomClipFromAsset(AudioAsset asset)
+        {
+            if (asset.allowMultipleClips && asset.multipleClips.Count > 0)
+            {
+                int randomIndex = Random.Range(0, asset.multipleClips.Count);
+                return asset.multipleClips[randomIndex];
+            }
+            
+            Debug.LogWarning("Asset does not allow multiple clips, or has no clips.");
+            return null;
+        }
+
+
         #endregion
     }
 }

@@ -12,9 +12,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4cfa06c2db3677742885970c12345ce9, type: 3}
   m_Name: Samples Library
   m_EditorClassIdentifier: 
-  musicClips:
-  - clip: {fileID: 8300000, guid: a3ea63e7da39c7149bddf50cfdeffd5f, type: 3}
-  soundClips:
-  - clip: {fileID: 8300000, guid: bc597adb94f75364095c6cc88615b7b0, type: 3}
-  voiceClips:
-  - clip: {fileID: 8300000, guid: cd8b978700bd0cc44be8f157a700451f, type: 3}
+  musicAssets:
+  - {fileID: 11400000, guid: 2ff7d0aa98deb08439b198a663e98205, type: 2}
+  soundAssets:
+  - {fileID: 11400000, guid: d57f4095e800abb489daf5b9b88e0e3a, type: 2}
+  - {fileID: 11400000, guid: 63d8dbdc2a0493e4b9ba7aa3018cf8ec, type: 2}
+  voiceAssets:
+  - {fileID: 11400000, guid: 6af2106c420fadd4fa3c11f5347ee8f6, type: 2}
