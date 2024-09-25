@@ -75,6 +75,11 @@ namespace HarmonyAudio.Editor
             }
             EditorGUILayout.EndHorizontal();
             
+            if (_enableVoiceProp.boolValue)
+            {
+                EditorGUILayout.PropertyField(serializedObject.FindProperty("voiceSourcePoolSize"), new GUIContent("Voice Sources Pool Size"));
+            }
+            
             // If voice extension is enabled, add a text box
             if (_enableVoiceProp.boolValue)
             {

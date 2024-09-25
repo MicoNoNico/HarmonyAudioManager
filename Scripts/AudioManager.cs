@@ -47,6 +47,7 @@ namespace HarmonyAudio.Scripts
         [Header("References")]
         [SerializeField] private AudioSource musicSource;
         private AudioSource _voiceSource;
+        [SerializeField, HideInInspector] private int voiceSourcePoolSize = 3;
         private AudioSource _soundSource;
         [SerializeField] private int soundSourcePoolSize = 5;
 
@@ -58,6 +59,8 @@ namespace HarmonyAudio.Scripts
         [SerializeField, HideInInspector] public bool enableVoice;
         
         private List<AudioSource> _soundSources;
+        private List<AudioSource> _voiceSources;
+        
         private Dictionary<string, AudioClip> _musicClipsDict;
         private Dictionary<string, AudioClip> _sfxClipsDict;
 
@@ -81,9 +84,14 @@ namespace HarmonyAudio.Scripts
             
             if (enableVoice)
             {
-                _voiceSource = gameObject.AddComponent<AudioSource>();
-                _voiceSource.playOnAwake = false;
-                _voiceSource.volume = voiceVolume * masterVolume;
+                _voiceSources = new List<AudioSource>();
+                for (int i = 0; i < voiceSourcePoolSize; i++)
+                {
+                    AudioSource source = gameObject.AddComponent<AudioSource>();
+                    source.playOnAwake = false;
+                    source.volume = voiceVolume * masterVolume;
+                    _voiceSources.Add(source);
+                }
             }
         }
 
@@ -337,10 +345,13 @@ namespace HarmonyAudio.Scripts
                 }
             }
             
-            // Update voice source volume if enabled
-            if (enableVoice && _voiceSource != null)
+            // Update voice sources volume if enabled
+            if (enableVoice && _voiceSources != null)
             {
-                _voiceSource.volume = voiceVolume * masterVolume;
+                foreach (var source in _voiceSources)
+                {
+                    source.volume = voiceVolume * masterVolume;
+                }
             }
         }
 
@@ -457,10 +468,27 @@ namespace HarmonyAudio.Scripts
             AudioClip clip = _instance.audioLibrary.GetVoiceClip(voiceClip);
             if (clip != null)
             {
-                _instance._voiceSource.clip = clip;
-                _instance._voiceSource.loop = loop;
-                _instance._voiceSource.volume = _instance.voiceVolume * _instance.masterVolume;
-                _instance._voiceSource.Play();
+                AudioSource availableSource = _instance._voiceSources.Find(s => !s.isPlaying);
+                if (availableSource != null)
+                {
+                    availableSource.clip = clip;
+                    availableSource.loop = loop;
+                    availableSource.volume = _instance.voiceVolume * _instance.masterVolume;
+                    availableSource.Play();
+                }
+                else
+                {
+                    Debug.LogWarning("All Voice AudioSources are busy.");
+                    // TODO: expand the pool or replace the oldest playing source
+                    // AudioSource newSource = _instance.gameObject.AddComponent<AudioSource>();
+                    // newSource.playOnAwake = false;
+                    // newSource.volume = _instance.voiceVolume * _instance.masterVolume;
+                    // _instance._voiceSources.Add(newSource);
+// 
+                    // newSource.clip = clip;
+                    // newSource.loop = loop;
+                    // newSource.Play();
+                }
             }
             else
             {
@@ -547,7 +575,15 @@ namespace HarmonyAudio.Scripts
             }
 
             _instance.voiceVolume = Mathf.Clamp01(volume);
-            _instance._voiceSource.volume = _instance.voiceVolume * _instance.masterVolume;
+
+            // Update all voice sources volumes
+            if (_instance._voiceSources != null)
+            {
+                foreach (var source in _instance._voiceSources)
+                {
+                    source.volume = _instance.voiceVolume * _instance.masterVolume;
+                }
+            }
         }
 
         /// <summary>
