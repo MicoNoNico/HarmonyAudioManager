@@ -41,15 +41,16 @@ namespace HarmonyAudio.Scripts
 
         #region Fields and Properties
 
-        [Header("Audio Library")]
-        [SerializeField] private AudioLibrary audioLibrary;
-        
         [Header("References")]
+        [SerializeField] private AudioLibrary audioLibrary;
         [SerializeField] private AudioSource musicSource;
-        [SerializeField, HideInInspector] private int voiceSourcePoolSize = 3;
-        private AudioSource _soundSource;
-        [SerializeField] private int soundSourcePoolSize = 5;
 
+        [Header("Pooling Settings")]
+        [SerializeField] private int initialSoundPoolSize = 5;
+        [SerializeField] private int maxSoundPoolSize = 10; // Set to 0 for unlimited
+        [SerializeField, HideInInspector] private int initialVoicePoolSize = 3;
+        [SerializeField, HideInInspector] private int maxVoicePoolSize = 10; // Set to 0 for unlimited
+        
         [SerializeField, HideInInspector] private float masterVolume = 1f;
         [SerializeField, HideInInspector] private float musicVolume = 1f;
         [SerializeField, HideInInspector] private float soundsVolume = 1f;
@@ -62,6 +63,9 @@ namespace HarmonyAudio.Scripts
         
         private Dictionary<string, AudioClip> _musicClipsDict;
         private Dictionary<string, AudioClip> _sfxClipsDict;
+        
+        private GameObject _soundSourcesParent;
+        private GameObject _voiceSourcesParent;
 
         #endregion
 
@@ -70,29 +74,32 @@ namespace HarmonyAudio.Scripts
         private void Initialize()
         {
             LoadVolumeSettings();
+            
+            // Create parent GameObjects
+            _soundSourcesParent = new GameObject("SoundSources");
+            _soundSourcesParent.transform.parent = this.transform;
+
+            _voiceSourcesParent = new GameObject("VoiceSources");
+            _voiceSourcesParent.transform.parent = this.transform;
 
             // Initialize the SFX AudioSource pool
             _soundSources = new List<AudioSource>();
-            for (int i = 0; i < soundSourcePoolSize; i++)
+            for (int i = 0; i < initialSoundPoolSize; i++)
             {
-                AudioSource source = gameObject.AddComponent<AudioSource>();
-                source.playOnAwake = false;
-                source.volume = soundsVolume * masterVolume;
-                _soundSources.Add(source);
+                CreateNewSoundSource(true);
             }
-            
+
+            // Initialize the Voice AudioSource pool if voice is enabled
             if (enableVoice)
             {
                 _voiceSources = new List<AudioSource>();
-                for (int i = 0; i < voiceSourcePoolSize; i++)
+                for (int i = 0; i < initialVoicePoolSize; i++)
                 {
-                    AudioSource source = gameObject.AddComponent<AudioSource>();
-                    source.playOnAwake = false;
-                    source.volume = voiceVolume * masterVolume;
-                    _voiceSources.Add(source);
+                    CreateNewVoiceSource(true);
                 }
             }
         }
+
 
         #endregion
 
@@ -277,20 +284,37 @@ namespace HarmonyAudio.Scripts
                     }
                     else
                     {
-                        Debug.LogWarning("All SFX AudioSources are busy.");
+                        if (_instance.maxSoundPoolSize == 0 ||
+                            _instance._soundSources.Count < _instance.maxSoundPoolSize)
+                        {
+                            AudioSource newSource = _instance.CreateNewSoundSource(); // Dynamic source
+                            newSource.volume = _instance.soundsVolume * _instance.masterVolume;
+                            newSource.PlayOneShot(clip);
+
+                            // Start cleanup coroutine
+                            _instance.StartCoroutine(_instance.CleanupSoundSourceAfterPlay(newSource, clip));
+                        }
+                        else
+                        {
+                            Debug.LogWarning("All Sound AudioSources are busy, and max pool size reached.");
+                        }
                     }
                 }
                 else
                 {
-                    Debug.LogWarning($"No clip found in AudioAsset '{soundClip}'.");
+                    Debug.LogWarning($"No clip found for '{soundClip}'.");
                 }
-            }
+            }          
             else
             {
                 Debug.LogWarning($"Sound asset '{soundClip}' not found.");
             }
         }
 
+        /// <summary>
+        /// Plays a random sound effect by name.
+        /// </summary>
+        /// <param name="soundClip"></param>
         public static void PlayRandomSound(SoundClips soundClip)
         {
             if (_instance == null)
@@ -314,12 +338,25 @@ namespace HarmonyAudio.Scripts
                     }
                     else
                     {
-                        Debug.LogWarning("All Sound AudioSources are busy.");
+                        if (_instance.maxSoundPoolSize == 0 ||
+                            _instance._soundSources.Count < _instance.maxSoundPoolSize)
+                        {
+                            AudioSource newSource = _instance.CreateNewSoundSource(); // Dynamic source
+                            newSource.volume = _instance.soundsVolume * _instance.masterVolume;
+                            newSource.PlayOneShot(randomClip);
+
+                            // Start cleanup coroutine
+                            _instance.StartCoroutine(_instance.CleanupSoundSourceAfterPlay(newSource, randomClip));
+                        }
+                        else
+                        {
+                            Debug.LogWarning("All Sound AudioSources are busy, and max pool size reached.");
+                        }
                     }
                 }
                 else
                 {
-                    Debug.LogWarning($"No clip found in AudioAsset '{soundClip}' to play.");
+                    Debug.LogWarning($"No clip found for '{soundClip}'.");
                 }
             }
             else
@@ -507,6 +544,64 @@ namespace HarmonyAudio.Scripts
                 }
             }
         }
+        
+        /// <summary>
+        /// Coroutine to clean up a sound source after it has finished playing.
+        /// </summary>
+        /// <param name="source"></param>
+        /// <param name="clip"></param>
+        /// <returns></returns>
+        private IEnumerator CleanupSoundSourceAfterPlay(AudioSource source, AudioClip clip)
+        {
+            // Wait for the clip to finish playing
+            yield return new WaitForSeconds(clip.length + 0.1f);
+
+            // Ensure the source has stopped playing
+            while (source.isPlaying)
+            {
+                yield return null;
+            }
+
+            // Check if the source is dynamic (not initial)
+            AudioSourceMetadata metadata = source.GetComponent<AudioSourceMetadata>();
+            if (metadata != null && !metadata.isInitial)
+            {
+                // Remove from the pool
+                _soundSources.Remove(source);
+
+                // Destroy the GameObject
+                Destroy(source.gameObject);
+            }
+        }
+
+        /// <summary>
+        /// Coroutine to clean up a voice source after it has finished playing.
+        /// </summary>
+        /// <param name="source"></param>
+        /// <param name="clip"></param>
+        /// <returns></returns>
+        private IEnumerator CleanupVoiceSourceAfterPlay(AudioSource source, AudioClip clip)
+        {
+            // Wait for the clip to finish playing
+            yield return new WaitForSeconds(clip.length + 0.1f);
+
+            // Ensure the source has stopped playing
+            while (source.isPlaying)
+            {
+                yield return null;
+            }
+
+            // Check if the source is dynamic (not initial)
+            AudioSourceMetadata metadata = source.GetComponent<AudioSourceMetadata>();
+            if (metadata != null && !metadata.isInitial)
+            {
+                // Remove from the pool
+                _voiceSources.Remove(source);
+
+                // Destroy the GameObject
+                Destroy(source.gameObject);
+            }
+        }
 
         #endregion
 
@@ -576,7 +671,6 @@ namespace HarmonyAudio.Scripts
 
                 if (clip != null)
                 {
-                    // Find an available voice source
                     AudioSource availableSource = _instance._voiceSources.Find(s => !s.isPlaying);
                     if (availableSource != null)
                     {
@@ -584,24 +678,38 @@ namespace HarmonyAudio.Scripts
                         availableSource.loop = loop;
                         availableSource.volume = _instance.voiceVolume * _instance.masterVolume;
                         availableSource.Play();
+
+                        if (!loop)
+                        {
+                            // Start cleanup coroutine
+                            _instance.StartCoroutine(_instance.CleanupVoiceSourceAfterPlay(availableSource, clip));
+                        }
                     }
                     else
                     {
-                        Debug.LogWarning("All Voice AudioSources are busy.");
-                        // TODO: expand the pool or replace the oldest playing source
-                        // AudioSource newSource = _instance.gameObject.AddComponent<AudioSource>();
-                        // newSource.playOnAwake = false;
-                        // newSource.volume = _instance.voiceVolume * _instance.masterVolume;
-                        // _instance._voiceSources.Add(newSource);
-                        // 
-                        // newSource.clip = clip;
-                        // newSource.loop = loop;
-                        // newSource.Play();    
+                        if (_instance.maxVoicePoolSize == 0 || _instance._voiceSources.Count < _instance.maxVoicePoolSize)
+                        {
+                            AudioSource newSource = _instance.CreateNewVoiceSource(); // Dynamic source
+                            newSource.clip = clip;
+                            newSource.loop = loop;
+                            newSource.volume = _instance.voiceVolume * _instance.masterVolume;
+                            newSource.Play();
+
+                            if (!loop)
+                            {
+                                // Start cleanup coroutine
+                                _instance.StartCoroutine(_instance.CleanupVoiceSourceAfterPlay(newSource, clip));
+                            }
+                        }
+                        else
+                        {
+                            Debug.LogWarning("All Voice AudioSources are busy, and max pool size reached.");
+                        }
                     }
                 }
                 else
                 {
-                    Debug.LogWarning($"No clip found in AudioAsset '{voiceClip}'.");
+                    Debug.LogWarning($"No clip found for '{voiceClip}'.");
                 }
             }
             else
@@ -610,6 +718,11 @@ namespace HarmonyAudio.Scripts
             }
         }
         
+        /// <summary>
+        /// Plays a random voice clip by name.
+        /// </summary>
+        /// <param name="voiceClip"></param>
+        /// <param name="loop"></param>
         public static void PlayRandomVoice(VoiceClips voiceClip, bool loop = false)
         {
             if (_instance == null)
@@ -638,29 +751,43 @@ namespace HarmonyAudio.Scripts
                         availableSource.loop = loop;
                         availableSource.volume = _instance.voiceVolume * _instance.masterVolume;
                         availableSource.Play();
+
+                        if (!loop)
+                        {
+                            // Start cleanup coroutine
+                            _instance.StartCoroutine(_instance.CleanupVoiceSourceAfterPlay(availableSource, randomClip));
+                        }
                     }
                     else
                     {
-                        Debug.LogWarning("All Voice AudioSources are busy.");
-                        // TODO: expand the pool or replace the oldest playing source
-                        // AudioSource newSource = _instance.gameObject.AddComponent<AudioSource>();
-                        // newSource.playOnAwake = false;
-                        // newSource.volume = _instance.voiceVolume * _instance.masterVolume;
-                        // _instance._voiceSources.Add(newSource);
-                        // 
-                        // newSource.clip = clip;
-                        // newSource.loop = loop;
-                        // newSource.Play();    
+                        if (_instance.maxVoicePoolSize == 0 || _instance._voiceSources.Count < _instance.maxVoicePoolSize)
+                        {
+                            AudioSource newSource = _instance.CreateNewVoiceSource(); // Dynamic source
+                            newSource.clip = randomClip;
+                            newSource.loop = loop;
+                            newSource.volume = _instance.voiceVolume * _instance.masterVolume;
+                            newSource.Play();
+
+                            if (!loop)
+                            {
+                                // Start cleanup coroutine
+                                _instance.StartCoroutine(_instance.CleanupVoiceSourceAfterPlay(newSource, randomClip));
+                            }
+                        }
+                        else
+                        {
+                            Debug.LogWarning("All Voice AudioSources are busy, and max pool size reached.");
+                        }
                     }
                 }
                 else
                 {
-                    Debug.LogWarning($"No clip found in AudioAsset '{voiceClip}' to play.");
+                    Debug.LogWarning($"No clip found for '{voiceClip}'.");
                 }
             }
             else
             {
-                Debug.LogWarning($"Sound asset '{voiceClip}' not found.");
+                Debug.LogWarning($"Voice asset '{voiceClip}' not found.");
             }
         }
 
@@ -864,7 +991,38 @@ namespace HarmonyAudio.Scripts
             return null;
         }
 
+        private AudioSource CreateNewSoundSource(bool isInitial = false)
+        {
+            GameObject sourceObj = new GameObject("SoundSource");
+            sourceObj.transform.parent = _soundSourcesParent.transform;
+            AudioSource source = sourceObj.AddComponent<AudioSource>();
+            source.playOnAwake = false;
+            source.volume = soundsVolume * masterVolume;
 
+            // Attach metadata component
+            AudioSourceMetadata metadata = sourceObj.AddComponent<AudioSourceMetadata>();
+            metadata.isInitial = isInitial;
+
+            _soundSources.Add(source);
+            return source;
+        }
+
+        private AudioSource CreateNewVoiceSource(bool isInitial = false)
+        {
+            GameObject sourceObj = new GameObject("VoiceSource");
+            sourceObj.transform.parent = _voiceSourcesParent.transform;
+            AudioSource source = sourceObj.AddComponent<AudioSource>();
+            source.playOnAwake = false;
+            source.volume = voiceVolume * masterVolume;
+
+            // Attach metadata component
+            AudioSourceMetadata metadata = sourceObj.AddComponent<AudioSourceMetadata>();
+            metadata.isInitial = isInitial;
+
+            _voiceSources.Add(source);
+            return source;
+        }
+        
         #endregion
     }
 }

@@ -7,37 +7,67 @@ namespace HarmonyAudio.Editor
     [CustomEditor(typeof(AudioManager))]
     public class AudioManagerEditor : UnityEditor.Editor
     {
+        private Texture2D _headerImage;
+        
         private SerializedProperty _masterVolumeProp;
         private SerializedProperty _musicVolumeProp;
         private SerializedProperty _soundsVolumeProp;
         private SerializedProperty _voiceVolumeProp;
         private SerializedProperty _enableVoiceProp;
+        private SerializedProperty _initialVoicePoolSizeProp;
+        private SerializedProperty _maxVoicePoolSizeProp;
 
         // Variable for tracking the foldout state
         private bool _volumeControlsFoldout = true;
+        private bool _extensionsFoldout = true;
 
         private void OnEnable()
         {
+            _headerImage = Resources.Load<Texture2D>("Banner");
+            
             _masterVolumeProp = serializedObject.FindProperty("masterVolume");
             _musicVolumeProp = serializedObject.FindProperty("musicVolume");
             _soundsVolumeProp = serializedObject.FindProperty("soundsVolume");
             _voiceVolumeProp = serializedObject.FindProperty("voiceVolume");
             _enableVoiceProp = serializedObject.FindProperty("enableVoice");
+            _initialVoicePoolSizeProp = serializedObject.FindProperty("initialVoicePoolSize");
+            _maxVoicePoolSizeProp = serializedObject.FindProperty("maxVoicePoolSize");
         }
 
         public override void OnInspectorGUI()
         {
+            // Custom box
+            GUIStyle boxStyle = new GUIStyle(GUI.skin.box);
+            boxStyle.normal.background = new Texture2D(2, 2);
+            boxStyle.padding = new RectOffset(10, 10, 10, 10);  // Padding inside the box
+            
             serializedObject.Update();
+            
+            if (_headerImage != null)
+            {
+                float inspectorWidth = EditorGUIUtility.currentViewWidth - 30; // Get the current inspector width
+                
+                GUILayout.BeginHorizontal();
+                //GUILayout.FlexibleSpace(); // Center the image
+                GUILayout.Label(_headerImage, GUILayout.Width(inspectorWidth), GUILayout.Height(inspectorWidth/3)); // Adjust the size as needed
+                //GUILayout.FlexibleSpace();
+                GUILayout.EndHorizontal();
+            }
             
             DrawDefaultInspector();
 
-            EditorGUILayout.Space();
+            EditorGUILayout.Space(20);
 
-            // Collapsible Volume Controls
+            GUILayout.BeginVertical(boxStyle);
+            
+            GUILayout.BeginHorizontal();
+            GUILayout.Space(10); // Adds padding before the foldout
             _volumeControlsFoldout = EditorGUILayout.Foldout(_volumeControlsFoldout, "Volume Controls", true);
+            GUILayout.EndHorizontal();
 
             if (_volumeControlsFoldout)
             {
+                EditorGUILayout.Space(10);
                 // Indent for better visual organization
                 EditorGUI.indentLevel++;
 
@@ -60,31 +90,52 @@ namespace HarmonyAudio.Editor
                 // Reset indent level
                 EditorGUI.indentLevel--;
             }
-
-            EditorGUILayout.Space();
-            // Voice Extension Section
-            EditorGUILayout.LabelField("Extensions", EditorStyles.boldLabel);
-
-            EditorGUILayout.BeginHorizontal();
-            EditorGUILayout.LabelField("Voiceover extension", GUILayout.Width(150));
-
-            string voiceButtonLabel = _enableVoiceProp.boolValue ? "Disable" : "Enable";
-            if (GUILayout.Button(voiceButtonLabel, GUILayout.Width(60)))
-            {
-                _enableVoiceProp.boolValue = !_enableVoiceProp.boolValue;  // Toggle the enableVoice property
-            }
-            EditorGUILayout.EndHorizontal();
             
-            if (_enableVoiceProp.boolValue)
+            GUILayout.EndVertical();
+
+            EditorGUILayout.Space(20);
+            
+            GUILayout.BeginHorizontal();
+            _extensionsFoldout = EditorGUILayout.Foldout(_extensionsFoldout, "Extensions", true, EditorStyles.foldoutHeader);
+            GUILayout.EndHorizontal();
+
+            if (_extensionsFoldout)
             {
-                EditorGUILayout.PropertyField(serializedObject.FindProperty("voiceSourcePoolSize"), new GUIContent("Voice Sources Pool Size"));
+                GUILayout.Space(10);
+                // Begin the custom-colored section
+                EditorGUILayout.BeginVertical(boxStyle);
+                
+                EditorGUILayout.BeginHorizontal();
+                EditorGUILayout.LabelField("Voice settings extension", GUILayout.Width(150));
+
+                string voiceButtonLabel = _enableVoiceProp.boolValue ? "Disable" : "Enable";
+                if (GUILayout.Button(voiceButtonLabel, GUILayout.Width(60)))
+                {
+                    _enableVoiceProp.boolValue = !_enableVoiceProp.boolValue;  // Toggle the enableVoice property
+                }
+                EditorGUILayout.EndHorizontal();
+                
+                GUILayout.Space(10);
+                
+                if (_enableVoiceProp.boolValue)
+                {
+                    EditorGUILayout.PropertyField(_initialVoicePoolSizeProp, new GUIContent("Initial Voice Pool Size"));
+                    EditorGUILayout.PropertyField(_maxVoicePoolSizeProp, new GUIContent("Max Voice Pool Size (0 = Unlimited)"));
+                }
+                
+                GUILayout.Space(10);
+                
+                // If voice extension is enabled, add a text box
+                if (_enableVoiceProp.boolValue)
+                {
+                    EditorGUILayout.HelpBox("Voice over extension enabled, make sure to add your new clips in your library!", MessageType.Info);
+                }
+                
+                // End the custom-colored section
+                EditorGUILayout.EndVertical();                
             }
             
-            // If voice extension is enabled, add a text box
-            if (_enableVoiceProp.boolValue)
-            {
-                EditorGUILayout.HelpBox("Voice over extension enabled, make sure to add your new clips in your library!", MessageType.Info);
-            }
+
             
             serializedObject.ApplyModifiedProperties();
         }
@@ -100,7 +151,7 @@ namespace HarmonyAudio.Editor
             EditorGUILayout.BeginHorizontal();
 
             // Label
-            EditorGUILayout.LabelField(label, GUILayout.Width(EditorGUIUtility.labelWidth - 4));
+            EditorGUILayout.LabelField(label, GUILayout.Width(150));
 
             // Slider with values from 1 to 100, but internally stored as 0.0 to 1.0
             float volumePercentage = volumeProperty.floatValue * 100f; // Convert from 0-1 to 0-100 for display
