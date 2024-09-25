@@ -52,6 +52,24 @@ namespace HarmonyAudio.Editor
             }
 
             serializedObject.ApplyModifiedProperties();
+            
+            AudioManager audioManager = (AudioManager)target;
+
+            EditorGUILayout.Space();
+            EditorGUILayout.LabelField("Extensions", EditorStyles.boldLabel);
+
+            if (audioManager.GetComponent<VoiceManager>() == null)
+            {
+                if (GUILayout.Button("Add Voice Manager"))
+                {
+                    audioManager.gameObject.AddComponent<VoiceManager>();
+                    EditorUtility.SetDirty(audioManager);
+                }
+            }
+            else
+            {
+                EditorGUILayout.LabelField("Voice Manager Added");
+            }
         }
 
         /// <summary>

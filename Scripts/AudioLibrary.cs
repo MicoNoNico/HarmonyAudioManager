@@ -34,6 +34,9 @@ namespace HarmonyAudio.Scripts
         /// </summary>
         [Tooltip("List of sound effect audio clips with their associated names.")]
         public List<NamedSoundClip> soundClips = new List<NamedSoundClip>();
+        
+        [Tooltip("List of voice audio clips (only visible if VoiceManager is added).")]
+        public List<NamedVoiceClip> voiceClips = new List<NamedVoiceClip>();
 
         private Dictionary<MusicClips, AudioClip> _musicClipsDict;
         private Dictionary<SoundClips, AudioClip> _soundClipsDict;
@@ -161,6 +164,13 @@ namespace HarmonyAudio.Scripts
 
     [System.Serializable]
     public class NamedSoundClip
+    {
+        [Tooltip("The audio clip asset.")]
+        public AudioClip clip;
+    }
+    
+    [System.Serializable]
+    public class NamedVoiceClip
     {
         [Tooltip("The audio clip asset.")]
         public AudioClip clip;

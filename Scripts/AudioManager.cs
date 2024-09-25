@@ -391,5 +391,51 @@ namespace HarmonyAudio.Scripts
         }
 
         #endregion
+        
+        #region Voice Manager Extension
+        
+        private VoiceManager voiceManager;
+        
+        public static void PlayVoice(AudioClip clip)
+        {
+            if (_instance == null)
+            {
+                Debug.LogError("AudioManager instance not found.");
+                return;
+            }
+
+            if (_instance.voiceManager != null)
+            {
+                _instance.voiceManager.PlayVoice(clip);
+            }
+            else
+            {
+                Debug.LogWarning("VoiceManager not found. Add the extension to use voice playback.");
+            }
+        }
+
+        public static void SetVoiceVolume(float volume)
+        {
+            if (_instance != null && _instance.voiceManager != null)
+            {
+                _instance.voiceManager.SetVoiceVolume(volume);
+            }
+            else
+            {
+                Debug.LogWarning("VoiceManager not found. Add the extension to use voice volume control.");
+            }
+        }
+
+        public static float GetVoiceVolume()
+        {
+            if (_instance != null && _instance.voiceManager != null)
+            {
+                return _instance.voiceManager.GetVoiceVolume();
+            }
+
+            return 0f;
+        }
+        
+        #endregion
     }
 }

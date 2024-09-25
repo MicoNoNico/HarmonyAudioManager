@@ -11,11 +11,40 @@ namespace HarmonyAudio.Editor
     [CustomEditor(typeof(AudioLibrary))]
     public class AudioLibraryEditor : UnityEditor.Editor
     {
+        private SerializedProperty musicClipsProp;
+        private SerializedProperty soundClipsProp;
+        private SerializedProperty voiceClipsProp;
+
+        private void OnEnable()
+        {
+            // Cache the serialized properties
+            musicClipsProp = serializedObject.FindProperty("musicClips");
+            soundClipsProp = serializedObject.FindProperty("soundClips");
+            voiceClipsProp = serializedObject.FindProperty("voiceClips");
+        }
+        
         public override void OnInspectorGUI()
         {
-            DrawDefaultInspector();
+            serializedObject.Update();
 
             AudioLibrary audioLibrary = (AudioLibrary)target;
+            var audioManager = FindObjectOfType<AudioManager>();
+
+            // Draw music clips field
+            EditorGUILayout.PropertyField(musicClipsProp, true);
+
+            // Draw sound effects clips field
+            EditorGUILayout.PropertyField(soundClipsProp, true);
+
+            // Only show voice clips if VoiceManager is added
+            if (audioManager != null && audioManager.GetComponent<VoiceManager>() != null)
+            {
+                EditorGUILayout.Space();
+                EditorGUILayout.LabelField("Voice Clips", EditorStyles.boldLabel);
+                EditorGUILayout.PropertyField(voiceClipsProp, true);
+            }
+
+            serializedObject.ApplyModifiedProperties();
             
             GUILayout.Space(20);
             
@@ -35,6 +64,7 @@ namespace HarmonyAudio.Editor
 
             GenerateEnumFile(enumDirectory, "MusicClips", audioLibrary.musicClips);
             GenerateEnumFile(enumDirectory, "SoundClips", audioLibrary.soundClips);
+            GenerateEnumFile(enumDirectory, "VoiceClips", audioLibrary.voiceClips);
 
             AssetDatabase.Refresh();
             Debug.Log("Library regenerated successfully.");
