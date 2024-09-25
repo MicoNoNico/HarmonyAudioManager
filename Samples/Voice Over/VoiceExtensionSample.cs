@@ -5,7 +5,7 @@ using UnityEngine.UI;
 
 namespace HarmonyAudio.Samples.Voice_Over
 {
-    public class VoiceOverSample : MonoBehaviour
+    public class VoiceExtensionSample : MonoBehaviour
     {
         [Header("Buttons")]
         public Button playMusicButton;
@@ -13,6 +13,7 @@ namespace HarmonyAudio.Samples.Voice_Over
 
         public Button playVoiceButton;
         public Button pauseVoiceButton;
+        public Button resumeVoiceButton;
         public Button stopVoiceButton;
         public Button fadeInVoiceButton;
         public Button fadeOutVoiceButton;
@@ -32,6 +33,7 @@ namespace HarmonyAudio.Samples.Voice_Over
             fadeOutVoiceButton.onClick.AddListener(OnFadeOutVoice);
             playVoiceButton.onClick.AddListener(OnPlayVoice);
             pauseVoiceButton.onClick.AddListener(OnPauseVoice);
+            resumeVoiceButton.onClick.AddListener(OnResumeVoice);
             stopVoiceButton.onClick.AddListener(OnStopVoice);
 
             // Add listeners to sliders
@@ -83,6 +85,11 @@ namespace HarmonyAudio.Samples.Voice_Over
         private void OnPauseVoice()
         {
             AudioManager.PauseVoice();
+        }
+        
+        private void OnResumeVoice()
+        {
+            AudioManager.ResumeVoice();
         }
         
         private void OnStopVoice()

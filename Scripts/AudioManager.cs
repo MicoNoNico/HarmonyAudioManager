@@ -46,7 +46,6 @@ namespace HarmonyAudio.Scripts
         
         [Header("References")]
         [SerializeField] private AudioSource musicSource;
-        private AudioSource _voiceSource;
         [SerializeField, HideInInspector] private int voiceSourcePoolSize = 3;
         private AudioSource _soundSource;
         [SerializeField] private int soundSourcePoolSize = 5;
@@ -382,7 +381,7 @@ namespace HarmonyAudio.Scripts
         }
         
         /// <summary>
-        /// Coroutine to fade the music volume to a target volume over a duration.
+        /// Coroutine to fade the volume of all voice audio sources to a target volume over a duration.
         /// </summary>
         /// <param name="targetVolume">The target volume.</param>
         /// <param name="duration">The duration over which to fade.</param>
@@ -395,14 +394,29 @@ namespace HarmonyAudio.Scripts
             {
                 timer += Time.deltaTime;
                 voiceVolume = Mathf.Lerp(startVolume, targetVolume, timer / duration);
-                _voiceSource.volume = voiceVolume * masterVolume;
+        
+                // Update volume for all active voice sources
+                foreach (var source in _voiceSources)
+                {
+                    if (source.isPlaying)
+                    {
+                        source.volume = voiceVolume * masterVolume;
+                    }
+                }
+
                 yield return null;
             }
 
+            // Set the final volume
             voiceVolume = targetVolume;
-            _voiceSource.volume = voiceVolume * masterVolume;
+            foreach (var source in _voiceSources)
+            {
+                if (source.isPlaying)
+                {
+                    source.volume = voiceVolume * masterVolume;
+                }
+            }
         }
-
 
         #endregion
 
@@ -497,7 +511,7 @@ namespace HarmonyAudio.Scripts
         }
 
         /// <summary>
-        /// Stops the currently playing voice clip.
+        /// Stops all currently playing voice clips.
         /// </summary>
         public static void StopVoice()
         {
@@ -506,18 +520,28 @@ namespace HarmonyAudio.Scripts
                 Debug.LogError("AudioManager instance not found.");
                 return;
             }
-            
+    
             if (!_instance.enableVoice)
             {
                 Debug.LogWarning("Voice Extension is not enabled.");
                 return;
             }
 
-            _instance._voiceSource.Stop();
+            // Stop all playing voice audio sources
+            if (_instance._voiceSources != null)
+            {
+                foreach (var source in _instance._voiceSources)
+                {
+                    if (source.isPlaying)
+                    {
+                        source.Stop();
+                    }
+                }
+            }
         }
 
         /// <summary>
-        /// Pauses the currently playing voice clip.
+        /// Pauses all currently playing voice clips.
         /// </summary>
         public static void PauseVoice()
         {
@@ -526,18 +550,28 @@ namespace HarmonyAudio.Scripts
                 Debug.LogError("AudioManager instance not found.");
                 return;
             }
-            
+    
             if (!_instance.enableVoice)
             {
                 Debug.LogWarning("Voice Extension is not enabled.");
                 return;
             }
 
-            _instance._voiceSource.Pause();
+            // Pause all playing voice audio sources
+            if (_instance._voiceSources != null)
+            {
+                foreach (var source in _instance._voiceSources)
+                {
+                    if (source.isPlaying)
+                    {
+                        source.Pause();
+                    }
+                }
+            }
         }
 
         /// <summary>
-        /// Resumes the paused voice clip.
+        /// Resumes all paused voice clips.
         /// </summary>
         public static void ResumeVoice()
         {
@@ -546,14 +580,23 @@ namespace HarmonyAudio.Scripts
                 Debug.LogError("AudioManager instance not found.");
                 return;
             }
-            
+    
             if (!_instance.enableVoice)
             {
                 Debug.LogWarning("Voice Extension is not enabled.");
                 return;
             }
 
-            _instance._voiceSource.UnPause();
+            // Resume all paused voice audio sources
+            if (_instance._voiceSources != null)
+            {
+                foreach (var source in _instance._voiceSources)
+                {
+                    // There's no direct way to check if an AudioSource is paused,
+                    // so we can call UnPause() on all sources
+                    source.UnPause();
+                }
+            }
         }
 
         /// <summary>
