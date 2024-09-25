@@ -9,7 +9,9 @@ namespace HarmonyAudio.Editor
     {
         private SerializedProperty _masterVolumeProp;
         private SerializedProperty _musicVolumeProp;
-        private SerializedProperty _sfxVolumeProp;
+        private SerializedProperty _soundsVolumeProp;
+        private SerializedProperty _voiceVolumeProp;
+        private SerializedProperty _enableVoiceProp;
 
         // Variable for tracking the foldout state
         private bool _volumeControlsFoldout = true;
@@ -18,14 +20,15 @@ namespace HarmonyAudio.Editor
         {
             _masterVolumeProp = serializedObject.FindProperty("masterVolume");
             _musicVolumeProp = serializedObject.FindProperty("musicVolume");
-            _sfxVolumeProp = serializedObject.FindProperty("sfxVolume");
+            _soundsVolumeProp = serializedObject.FindProperty("soundsVolume");
+            _voiceVolumeProp = serializedObject.FindProperty("voiceVolume");
+            _enableVoiceProp = serializedObject.FindProperty("enableVoice");
         }
 
         public override void OnInspectorGUI()
         {
             serializedObject.Update();
-
-            // Draw the default inspector for other properties
+            
             DrawDefaultInspector();
 
             EditorGUILayout.Space();
@@ -44,32 +47,41 @@ namespace HarmonyAudio.Editor
                 // Music Volume Slider (1 to 100 scale)
                 DrawVolumeSlider("Music Volume", _musicVolumeProp);
 
-                // SFX Volume Slider (1 to 100 scale)
-                DrawVolumeSlider("Sounds Volume", _sfxVolumeProp);
+                // Sounds Volume Slider (1 to 100 scale)
+                DrawVolumeSlider("Sounds Volume", _soundsVolumeProp);
+                
+                // If voice is enabled, draw the voice volume slider
+                if (_enableVoiceProp.boolValue)
+                {
+                    // Voice Volume Slider (1 to 100 scale)
+                    DrawVolumeSlider("Voice Volume", _voiceVolumeProp);
+                }
 
                 // Reset indent level
                 EditorGUI.indentLevel--;
             }
 
-            serializedObject.ApplyModifiedProperties();
-            
-            AudioManager audioManager = (AudioManager)target;
-
             EditorGUILayout.Space();
+            // Voice Extension Section
             EditorGUILayout.LabelField("Extensions", EditorStyles.boldLabel);
 
-            if (audioManager.GetComponent<VoiceManager>() == null)
+            EditorGUILayout.BeginHorizontal();
+            EditorGUILayout.LabelField("Voiceover extension", GUILayout.Width(150));
+
+            string voiceButtonLabel = _enableVoiceProp.boolValue ? "Disable" : "Enable";
+            if (GUILayout.Button(voiceButtonLabel, GUILayout.Width(60)))
             {
-                if (GUILayout.Button("Add Voice Manager"))
-                {
-                    audioManager.gameObject.AddComponent<VoiceManager>();
-                    EditorUtility.SetDirty(audioManager);
-                }
+                _enableVoiceProp.boolValue = !_enableVoiceProp.boolValue;  // Toggle the enableVoice property
             }
-            else
+            EditorGUILayout.EndHorizontal();
+            
+            // If voice extension is enabled, add a text box
+            if (_enableVoiceProp.boolValue)
             {
-                EditorGUILayout.LabelField("Voice Manager Added");
+                EditorGUILayout.HelpBox("Voice over extension enabled, make sure to add your new clips in your library!", MessageType.Info);
             }
+            
+            serializedObject.ApplyModifiedProperties();
         }
 
         /// <summary>

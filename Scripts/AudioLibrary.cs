@@ -40,6 +40,7 @@ namespace HarmonyAudio.Scripts
 
         private Dictionary<MusicClips, AudioClip> _musicClipsDict;
         private Dictionary<SoundClips, AudioClip> _soundClipsDict;
+        private Dictionary<VoiceClips, AudioClip> _voiceClipsDict;
 
         private void OnEnable()
         {
@@ -96,6 +97,29 @@ namespace HarmonyAudio.Scripts
                     }
                 }
             }
+            
+            // Initialize the voice clips dictionary
+            _voiceClipsDict = new Dictionary<VoiceClips, AudioClip>();
+            foreach (var namedClip in voiceClips)
+            {
+                if (namedClip.clip != null)
+                {
+                    string clipName = namedClip.clip.name;
+                    string sanitizedName = SanitizeEnumName(clipName);
+                    
+                    if (System.Enum.TryParse(sanitizedName, out VoiceClips voiceEnum))
+                    {
+                        if (!_voiceClipsDict.ContainsKey(voiceEnum))
+                            _voiceClipsDict.Add(voiceEnum, namedClip.clip);
+                        else
+                            Debug.LogWarning($"Duplicate voice clip enum '{voiceEnum}' found in AudioLibrary.");
+                    }
+                    else
+                    {
+                        Debug.LogWarning($"Voice clip '{clipName}' does not match any enum value.");
+                    }
+                }
+            }
         }
 
         /// <summary>
@@ -131,6 +155,24 @@ namespace HarmonyAudio.Scripts
             Debug.LogWarning($"Sound clip '{clipEnum}' not found in AudioLibrary.");
             return null;
         }
+
+        /// <summary>
+        /// Retrieves a voice audio clip by its name.
+        /// </summary>
+        /// <param name="clipEnum">The name of the voice clip to retrieve.</param>
+        /// <returns>The <see cref="AudioClip"/> if found; otherwise, null.</returns>
+        public AudioClip GetVoiceClip(VoiceClips clipEnum)
+        {
+            if (_voiceClipsDict == null || _voiceClipsDict.Count == 0)
+                InitializeDictionaries();
+            
+            if (_voiceClipsDict.TryGetValue(clipEnum, out var clip))
+                return clip;
+            
+            Debug.LogWarning($"Voice clip '{clipEnum}' not found in AudioLibrary.");
+            return null;
+        }
+        
         /// <summary>
         /// Sanitizes a string by removing invalid characters and replacing spaces with underscores.
         /// </summary>
@@ -152,7 +194,6 @@ namespace HarmonyAudio.Scripts
 
             return sanitized;
         }
-
     }
 
     [System.Serializable]

@@ -46,14 +46,18 @@ namespace HarmonyAudio.Scripts
         
         [Header("References")]
         [SerializeField] private AudioSource musicSource;
-        private AudioSource _sfxSource;
-        [SerializeField] private int sfxSourcePoolSize = 10;
+        private AudioSource _voiceSource;
+        private AudioSource _soundSource;
+        [SerializeField] private int soundSourcePoolSize = 5;
 
         [SerializeField, HideInInspector] private float masterVolume = 1f;
         [SerializeField, HideInInspector] private float musicVolume = 1f;
-        [SerializeField, HideInInspector] private float sfxVolume = 1f;
+        [SerializeField, HideInInspector] private float soundsVolume = 1f;
+        [SerializeField, HideInInspector] private float voiceVolume = 1f;
         
-        private List<AudioSource> _sfxSources;
+        [SerializeField, HideInInspector] public bool enableVoice;
+        
+        private List<AudioSource> _soundSources;
         private Dictionary<string, AudioClip> _musicClipsDict;
         private Dictionary<string, AudioClip> _sfxClipsDict;
 
@@ -66,13 +70,20 @@ namespace HarmonyAudio.Scripts
             LoadVolumeSettings();
 
             // Initialize the SFX AudioSource pool
-            _sfxSources = new List<AudioSource>();
-            for (int i = 0; i < sfxSourcePoolSize; i++)
+            _soundSources = new List<AudioSource>();
+            for (int i = 0; i < soundSourcePoolSize; i++)
             {
                 AudioSource source = gameObject.AddComponent<AudioSource>();
                 source.playOnAwake = false;
-                source.volume = sfxVolume * masterVolume;
-                _sfxSources.Add(source);
+                source.volume = soundsVolume * masterVolume;
+                _soundSources.Add(source);
+            }
+            
+            if (enableVoice)
+            {
+                _voiceSource = gameObject.AddComponent<AudioSource>();
+                _voiceSource.playOnAwake = false;
+                _voiceSource.volume = voiceVolume * masterVolume;
             }
         }
 
@@ -202,10 +213,10 @@ namespace HarmonyAudio.Scripts
             AudioClip clip = _instance.audioLibrary.GetSoundClip(soundClip);
             if (clip != null)
             {
-                AudioSource availableSource = _instance._sfxSources.Find(s => !s.isPlaying);
+                AudioSource availableSource = _instance._soundSources.Find(s => !s.isPlaying);
                 if (availableSource != null)
                 {
-                    availableSource.volume = _instance.sfxVolume * _instance.masterVolume;
+                    availableSource.volume = _instance.soundsVolume * _instance.masterVolume;
                     availableSource.PlayOneShot(clip);
                 }
                 else
@@ -224,7 +235,7 @@ namespace HarmonyAudio.Scripts
         /// Gets the current sound effects volume.
         /// </summary>
         /// <returns>The SFX volume (0.0 to 1.0).</returns>
-        public static float GetSfxVolume()
+        public static float GetSoundVolume()
         {
             if (_instance == null)
             {
@@ -232,7 +243,7 @@ namespace HarmonyAudio.Scripts
                 return 0f;
             }
 
-            return _instance.sfxVolume;
+            return _instance.soundsVolume;
         }
         
         #endregion
@@ -267,13 +278,13 @@ namespace HarmonyAudio.Scripts
                 return;
             }
 
-            _instance.sfxVolume = Mathf.Clamp01(volume);
+            _instance.soundsVolume = Mathf.Clamp01(volume);
             // Update all SFX sources volumes
-            if (_instance._sfxSources != null)
+            if (_instance._soundSources != null)
             {
-                foreach (var source in _instance._sfxSources)
+                foreach (var source in _instance._soundSources)
                 {
-                    source.volume = _instance.sfxVolume * _instance.masterVolume;
+                    source.volume = _instance.soundsVolume * _instance.masterVolume;
                 }
             }
         }
@@ -318,12 +329,18 @@ namespace HarmonyAudio.Scripts
             musicSource.volume = musicVolume * masterVolume;
 
             // Update all SFX sources volumes
-            if (_sfxSources != null)
+            if (_soundSources != null)
             {
-                foreach (var source in _sfxSources)
+                foreach (var source in _soundSources)
                 {
-                    source.volume = sfxVolume * masterVolume;
+                    source.volume = soundsVolume * masterVolume;
                 }
+            }
+            
+            // Update voice source volume if enabled
+            if (enableVoice && _voiceSource != null)
+            {
+                _voiceSource.volume = voiceVolume * masterVolume;
             }
         }
 
@@ -352,6 +369,28 @@ namespace HarmonyAudio.Scripts
             musicVolume = targetVolume;
             musicSource.volume = musicVolume * masterVolume;
         }
+        
+        /// <summary>
+        /// Coroutine to fade the music volume to a target volume over a duration.
+        /// </summary>
+        /// <param name="targetVolume">The target volume.</param>
+        /// <param name="duration">The duration over which to fade.</param>
+        private IEnumerator FadeVoiceVolumeCoroutine(float targetVolume, float duration)
+        {
+            float startVolume = voiceVolume;
+            float timer = 0f;
+
+            while (timer < duration)
+            {
+                timer += Time.deltaTime;
+                voiceVolume = Mathf.Lerp(startVolume, targetVolume, timer / duration);
+                _voiceSource.volume = voiceVolume * masterVolume;
+                yield return null;
+            }
+
+            voiceVolume = targetVolume;
+            _voiceSource.volume = voiceVolume * masterVolume;
+        }
 
 
         #endregion
@@ -371,7 +410,8 @@ namespace HarmonyAudio.Scripts
 
             PlayerPrefs.SetFloat("MasterVolume", _instance.masterVolume);
             PlayerPrefs.SetFloat("MusicVolume", _instance.musicVolume);
-            PlayerPrefs.SetFloat("SfxVolume", _instance.sfxVolume);
+            PlayerPrefs.SetFloat("SoundsVolume", _instance.soundsVolume);
+            if (_instance.enableVoice) PlayerPrefs.SetFloat("VoiceVolume", _instance.voiceVolume);
             PlayerPrefs.Save();
         }
 
@@ -385,55 +425,172 @@ namespace HarmonyAudio.Scripts
 
             _instance.masterVolume = PlayerPrefs.GetFloat("MasterVolume", 1f);
             _instance.musicVolume = PlayerPrefs.GetFloat("MusicVolume", 1f);
-            _instance.sfxVolume = PlayerPrefs.GetFloat("SfxVolume", 1f);
+            _instance.soundsVolume = PlayerPrefs.GetFloat("SoundsVolume", 1f);
+            if (_instance.enableVoice) _instance.voiceVolume = PlayerPrefs.GetFloat("VoiceVolume", 1f);
 
             _instance.UpdateAudioSourceVolumes();
         }
 
         #endregion
         
-        #region Voice Manager Extension
-        
-        private VoiceManager voiceManager;
-        
-        public static void PlayVoice(AudioClip clip)
+        #region Voice Playback Extension
+
+        /// <summary>
+        /// Plays a voice clip by name.
+        /// </summary>
+        /// <param name="voiceClip">The name of the voice clip to play.</param>
+        /// <param name="loop">Whether the voice clip should loop.</param>
+        public static void PlayVoice(VoiceClips voiceClip, bool loop = false)
+        {
+            if (_instance == null)
+            {
+                Debug.LogError("AudioManager instance not found. Ensure an AudioManager exists in the scene.");
+                return;
+            }
+            
+            if (!_instance.enableVoice)
+            {
+                Debug.LogWarning("Voice Extension is not enabled.");
+                return;
+            }
+
+            AudioClip clip = _instance.audioLibrary.GetVoiceClip(voiceClip);
+            if (clip != null)
+            {
+                _instance._voiceSource.clip = clip;
+                _instance._voiceSource.loop = loop;
+                _instance._voiceSource.volume = _instance.voiceVolume * _instance.masterVolume;
+                _instance._voiceSource.Play();
+            }
+            else
+            {
+                Debug.LogWarning($"Voice clip '{voiceClip}' not found.");
+            }
+        }
+
+        /// <summary>
+        /// Stops the currently playing voice clip.
+        /// </summary>
+        public static void StopVoice()
         {
             if (_instance == null)
             {
                 Debug.LogError("AudioManager instance not found.");
                 return;
             }
+            
+            if (!_instance.enableVoice)
+            {
+                Debug.LogWarning("Voice Extension is not enabled.");
+                return;
+            }
 
-            if (_instance.voiceManager != null)
-            {
-                _instance.voiceManager.PlayVoice(clip);
-            }
-            else
-            {
-                Debug.LogWarning("VoiceManager not found. Add the extension to use voice playback.");
-            }
+            _instance._voiceSource.Stop();
         }
 
+        /// <summary>
+        /// Pauses the currently playing voice clip.
+        /// </summary>
+        public static void PauseVoice()
+        {
+            if (_instance == null)
+            {
+                Debug.LogError("AudioManager instance not found.");
+                return;
+            }
+            
+            if (!_instance.enableVoice)
+            {
+                Debug.LogWarning("Voice Extension is not enabled.");
+                return;
+            }
+
+            _instance._voiceSource.Pause();
+        }
+
+        /// <summary>
+        /// Resumes the paused voice clip.
+        /// </summary>
+        public static void ResumeVoice()
+        {
+            if (_instance == null)
+            {
+                Debug.LogError("AudioManager instance not found.");
+                return;
+            }
+            
+            if (!_instance.enableVoice)
+            {
+                Debug.LogWarning("Voice Extension is not enabled.");
+                return;
+            }
+
+            _instance._voiceSource.UnPause();
+        }
+
+        /// <summary>
+        /// Sets the voice volume.
+        /// </summary>
+        /// <param name="volume">The new voice volume level (0.0 to 1.0).</param>
         public static void SetVoiceVolume(float volume)
         {
-            if (_instance != null && _instance.voiceManager != null)
+            if (_instance == null)
             {
-                _instance.voiceManager.SetVoiceVolume(volume);
+                Debug.LogError("AudioManager instance not found.");
+                return;
             }
-            else
+            
+            if (!_instance.enableVoice)
             {
-                Debug.LogWarning("VoiceManager not found. Add the extension to use voice volume control.");
+                Debug.LogWarning("Voice Extension is not enabled.");
+                return;
             }
+
+            _instance.voiceVolume = Mathf.Clamp01(volume);
+            _instance._voiceSource.volume = _instance.voiceVolume * _instance.masterVolume;
         }
 
+        /// <summary>
+        /// Gets the current voice volume.
+        /// </summary>
+        /// <returns>The voice volume (0.0 to 1.0).</returns>
         public static float GetVoiceVolume()
         {
-            if (_instance != null && _instance.voiceManager != null)
+            if (_instance == null)
             {
-                return _instance.voiceManager.GetVoiceVolume();
+                Debug.LogError("AudioManager instance not found.");
+                return 0f;
+            }
+            
+            if (!_instance.enableVoice)
+            {
+                Debug.LogWarning("Voice Extension is not enabled.");
+                return 0f;
             }
 
-            return 0f;
+            return _instance.voiceVolume;
+        }
+        
+        /// <summary>
+        /// Fades the music volume to a target volume over a duration.
+        /// </summary>
+        /// <param name="targetVolume">The target volume (0.0 to 1.0).</param>
+        /// <param name="duration">The duration over which to fade.</param>
+        public static void FadeVoiceVolume(float targetVolume, float duration)
+        {
+            if (_instance == null)
+            {
+                Debug.LogError("AudioManager instance not found.");
+                return;
+            }
+            
+            if (!_instance.enableVoice)
+            {
+                Debug.LogWarning("Voice Extension is not enabled.");
+                return;
+            }
+
+            _instance.StartCoroutine(_instance.FadeVoiceVolumeCoroutine(targetVolume, duration));
         }
         
         #endregion

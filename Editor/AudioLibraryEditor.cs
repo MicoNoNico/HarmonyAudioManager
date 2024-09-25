@@ -11,16 +11,16 @@ namespace HarmonyAudio.Editor
     [CustomEditor(typeof(AudioLibrary))]
     public class AudioLibraryEditor : UnityEditor.Editor
     {
-        private SerializedProperty musicClipsProp;
-        private SerializedProperty soundClipsProp;
-        private SerializedProperty voiceClipsProp;
+        private SerializedProperty _musicClipsProp;
+        private SerializedProperty _soundClipsProp;
+        private SerializedProperty _voiceClipsProp;
 
         private void OnEnable()
         {
             // Cache the serialized properties
-            musicClipsProp = serializedObject.FindProperty("musicClips");
-            soundClipsProp = serializedObject.FindProperty("soundClips");
-            voiceClipsProp = serializedObject.FindProperty("voiceClips");
+            _musicClipsProp = serializedObject.FindProperty("musicClips");
+            _soundClipsProp = serializedObject.FindProperty("soundClips");
+            _voiceClipsProp = serializedObject.FindProperty("voiceClips");
         }
         
         public override void OnInspectorGUI()
@@ -31,17 +31,22 @@ namespace HarmonyAudio.Editor
             var audioManager = FindObjectOfType<AudioManager>();
 
             // Draw music clips field
-            EditorGUILayout.PropertyField(musicClipsProp, true);
+            EditorGUILayout.PropertyField(_musicClipsProp, true);
 
             // Draw sound effects clips field
-            EditorGUILayout.PropertyField(soundClipsProp, true);
+            EditorGUILayout.PropertyField(_soundClipsProp, true);
 
-            // Only show voice clips if VoiceManager is added
-            if (audioManager != null && audioManager.GetComponent<VoiceManager>() != null)
+            bool voiceEnabled = false;
+            if (audioManager != null)
+            {
+                voiceEnabled = audioManager.enableVoice;
+            }
+            
+            // Only show voice clips if Voice Extension is enabled
+            if (voiceEnabled)
             {
                 EditorGUILayout.Space();
-                EditorGUILayout.LabelField("Voice Clips", EditorStyles.boldLabel);
-                EditorGUILayout.PropertyField(voiceClipsProp, true);
+                EditorGUILayout.PropertyField(_voiceClipsProp, true);
             }
 
             serializedObject.ApplyModifiedProperties();
@@ -56,6 +61,7 @@ namespace HarmonyAudio.Editor
 
         private void GenerateEnums(AudioLibrary audioLibrary)
         {
+            string libraryName = audioLibrary.ToString();
             string enumDirectory = "Assets/HarmonyAudio/Scripts/Enums";
             if (!Directory.Exists(enumDirectory))
             {
@@ -89,6 +95,10 @@ namespace HarmonyAudio.Editor
                 else if (typeof(T) == typeof(NamedSoundClip))
                 {
                     audioClip = (clip as NamedSoundClip).clip;
+                }
+                else if (typeof(T) == typeof(NamedVoiceClip))
+                {
+                    audioClip = (clip as NamedVoiceClip).clip;
                 }
 
                 if (audioClip != null)

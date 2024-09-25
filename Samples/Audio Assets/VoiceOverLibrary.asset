@@ -10,10 +10,11 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4cfa06c2db3677742885970c12345ce9, type: 3}
-  m_Name: Demo Audio Library
+  m_Name: VoiceOverLibrary
   m_EditorClassIdentifier: 
   musicClips:
-  - clip: {fileID: 8300000, guid: d75e75741528c7d45ad199ee14783a24, type: 3}
+  - clip: {fileID: 8300000, guid: a3ea63e7da39c7149bddf50cfdeffd5f, type: 3}
   soundClips:
-  - clip: {fileID: 8300000, guid: 308ce9517abca684e9cea5c0ccc156d6, type: 3}
-  voiceClips: []
+  - clip: {fileID: 8300000, guid: bc597adb94f75364095c6cc88615b7b0, type: 3}
+  voiceClips:
+  - clip: {fileID: 8300000, guid: cd8b978700bd0cc44be8f157a700451f, type: 3}
