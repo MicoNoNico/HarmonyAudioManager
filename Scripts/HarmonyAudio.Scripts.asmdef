@@ -1,12 +1,8 @@
 {
-    "name": "HarmonyAudio.Editor",
+    "name": "HarmonyAudio.Scripts",
     "rootNamespace": "",
-    "references": [
-        "GUID:a4a61f6c205e20542b6238a934c7363b"
-    ],
-    "includePlatforms": [
-        "Editor"
-    ],
+    "references": [],
+    "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
     "overrideReferences": false,
