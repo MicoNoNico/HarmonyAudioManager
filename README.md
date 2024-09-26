@@ -1,3 +1,5 @@
+![Banner-3x1](https://github.com/user-attachments/assets/52153a1d-3363-45b6-a054-58d557aec622)
+
 # Harmony - A Simple Audio Manager
 
 Harmony is a simple and efficient audio manager for Unity that enables easy playback of music and sound effects, with features like volume control, fading, and saving values.
@@ -60,9 +62,10 @@ Harmony is a simple and efficient audio manager for Unity that enables easy play
 ### Table of Contents
 - [1. Creating the Audio Manager](#1-creating-the-audio-manager)
 - [2. Creating the Audio Library](#2-creating-the-audio-library)
-- [3. Assigning Audio Clips](#3-assigning-audio-clips)
-- [4. Regenerating Enums](#4-regenerating-enums)
-- [5. Using the Audio Manager](#5-using-the-audio-manager)
+- [3. Creating Audio Assets](#3-creating-audio-assets)
+- [4. Assigning Audio Assets to the Library](#4-assigning-audio-assets-to-the-library)
+- [5. Regenerating Library](#5-regenerating-library)
+- [6. Using the Audio Manager](#6-using-the-audio-manager)
 
 ### [1] Creating the Audio Manager
 
@@ -129,7 +132,7 @@ Harmony is a simple and efficient audio manager for Unity that enables easy play
       - Click the **+** button in the **Voice Assets** list.
       - Assign your voice `AudioAsset`s.
 
-### [4] Regenerating Library
+### [5] Regenerating Library
 
 **Important: You must regenerate the enums at least once for the `AudioManager` to recognize your audio clips.**
 
@@ -146,7 +149,7 @@ Harmony is a simple and efficient audio manager for Unity that enables easy play
    - Navigate to `Assets/HarmonyAudio/Scripts/Enums/`.
    - Open `MusicClips.cs` and `SoundClips.cs` to verify that the enums have been generated correctly.
 
-### [5] Using the Audio Manager
+### [6] Using the Audio Manager
 
 With the setup complete, you can now use the `AudioManager` to play music and sound effects in your scripts.
 
