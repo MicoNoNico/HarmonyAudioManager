@@ -1,4 +1,6 @@
-![Banner-3x1](https://github.com/user-attachments/assets/52153a1d-3363-45b6-a054-58d557aec622)
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/52153a1d-3363-45b6-a054-58d557aec622" alt="Harmony Banner" />
+</p>
 
 # Harmony - A Simple Audio Manager
 
