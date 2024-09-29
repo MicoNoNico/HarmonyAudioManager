@@ -284,4 +284,4 @@ The `AudioManager` uses pooling for sound effects and voice clips to allow multi
 
 *Note: This is a list of upcoming features that I plan to add in due time. This list is also subject to change.*
 
-[Coming soon...]
+- Custom path for Enums script generation.
