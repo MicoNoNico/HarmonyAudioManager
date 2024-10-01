@@ -8,9 +8,9 @@ namespace HarmonyAudio.Editor
     [CustomEditor(typeof(AudioAsset))]
     public class AudioAssetEditor : UnityEditor.Editor
     {
-        SerializedProperty _allowMultipleClipsProp;
-        SerializedProperty _singleClipProp;
-        SerializedProperty _multipleClipsProp;
+        private SerializedProperty _allowMultipleClipsProp;
+        private SerializedProperty _singleClipProp;
+        private SerializedProperty _multipleClipsProp;
 
         private void OnEnable()
         {
@@ -25,13 +25,13 @@ namespace HarmonyAudio.Editor
 
             EditorGUILayout.PropertyField(_allowMultipleClipsProp);
 
-            if (_allowMultipleClipsProp.boolValue)
+            if (!_allowMultipleClipsProp.boolValue)
             {
-                EditorGUILayout.PropertyField(_multipleClipsProp, true);
+                EditorGUILayout.PropertyField(_singleClipProp);
             }
             else
             {
-                EditorGUILayout.PropertyField(_singleClipProp);
+                EditorGUILayout.PropertyField(_multipleClipsProp, true);
             }
 
             serializedObject.ApplyModifiedProperties();

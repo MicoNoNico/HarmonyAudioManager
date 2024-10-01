@@ -121,13 +121,13 @@ namespace HarmonyAudio.Scripts
             AudioAsset asset = _instance.audioLibrary.GetMusicAsset(musicClip);
             if (asset != null)
             {
-                AudioClip clip = GetClipFromAsset(asset);
+                AudioClipWithVolume clip = GetClipFromAsset(asset);
 
                 if (clip != null)
                 {
-                    _instance.musicSource.clip = clip;
+                    _instance.musicSource.clip = clip.Clip;
                     _instance.musicSource.loop = loop;
-                    _instance.musicSource.volume = _instance.musicVolume * _instance.masterVolume;
+                    _instance.musicSource.volume = _instance.musicVolume * _instance.masterVolume * clip.Volume;
                     _instance.musicSource.Play();
                 }
                 else
@@ -157,13 +157,13 @@ namespace HarmonyAudio.Scripts
             AudioAsset asset = _instance.audioLibrary.GetMusicAsset(musicClip);
             if (asset != null)
             {
-                AudioClip randomClip = GetRandomClipFromAsset(asset);
+                AudioClipWithVolume randomClip = GetRandomClipFromAsset(asset);
 
                 if (randomClip != null)
                 {
-                    _instance.musicSource.clip = randomClip;
+                    _instance.musicSource.clip = randomClip.Clip;
                     _instance.musicSource.loop = loop;
-                    _instance.musicSource.volume = _instance.musicVolume * _instance.masterVolume;
+                    _instance.musicSource.volume = _instance.musicVolume * _instance.masterVolume * randomClip.Volume;
                     _instance.musicSource.Play();
                 }
                 else
@@ -176,7 +176,6 @@ namespace HarmonyAudio.Scripts
                 Debug.LogWarning($"Sound asset '{musicClip}' not found.");
             }
         }
-
 
         /// <summary>
         /// Stops the currently playing music.
@@ -272,15 +271,15 @@ namespace HarmonyAudio.Scripts
             AudioAsset asset = _instance.audioLibrary.GetSoundAsset(soundClip);
             if (asset != null)
             {
-                AudioClip clip = GetClipFromAsset(asset);
+                AudioClipWithVolume clipWithVolume = GetClipFromAsset(asset);
 
-                if (clip != null)
+                if (clipWithVolume != null && clipWithVolume.Clip != null)
                 {
                     AudioSource availableSource = _instance._soundSources.Find(s => !s.isPlaying);
                     if (availableSource != null)
                     {
-                        availableSource.volume = _instance.soundsVolume * _instance.masterVolume;
-                        availableSource.PlayOneShot(clip);
+                        availableSource.volume = _instance.soundsVolume * _instance.masterVolume * clipWithVolume.Volume;
+                        availableSource.PlayOneShot(clipWithVolume.Clip);
                     }
                     else
                     {
@@ -288,11 +287,11 @@ namespace HarmonyAudio.Scripts
                             _instance._soundSources.Count < _instance.maxSoundPoolSize)
                         {
                             AudioSource newSource = _instance.CreateNewSoundSource(); // Dynamic source
-                            newSource.volume = _instance.soundsVolume * _instance.masterVolume;
-                            newSource.PlayOneShot(clip);
+                            newSource.volume = _instance.soundsVolume * _instance.masterVolume * clipWithVolume.Volume;
+                            newSource.PlayOneShot(clipWithVolume.Clip);
 
                             // Start cleanup coroutine
-                            _instance.StartCoroutine(_instance.CleanupSoundSourceAfterPlay(newSource, clip));
+                            _instance.StartCoroutine(_instance.CleanupSoundSourceAfterPlay(newSource, clipWithVolume.Clip));
                         }
                         else
                         {
@@ -304,7 +303,7 @@ namespace HarmonyAudio.Scripts
                 {
                     Debug.LogWarning($"No clip found for '{soundClip}'.");
                 }
-            }          
+            }
             else
             {
                 Debug.LogWarning($"Sound asset '{soundClip}' not found.");
@@ -326,15 +325,15 @@ namespace HarmonyAudio.Scripts
             AudioAsset asset = _instance.audioLibrary.GetSoundAsset(soundClip);
             if (asset != null)
             {
-                AudioClip randomClip = GetRandomClipFromAsset(asset);
+                AudioClipWithVolume clipWithVolume = GetRandomClipFromAsset(asset);
 
-                if (randomClip != null)
+                if (clipWithVolume != null && clipWithVolume.Clip != null)
                 {
                     AudioSource availableSource = _instance._soundSources.Find(s => !s.isPlaying);
                     if (availableSource != null)
                     {
-                        availableSource.volume = _instance.soundsVolume * _instance.masterVolume;
-                        availableSource.PlayOneShot(randomClip);
+                        availableSource.volume = _instance.soundsVolume * _instance.masterVolume * clipWithVolume.Volume;
+                        availableSource.PlayOneShot(clipWithVolume.Clip);
                     }
                     else
                     {
@@ -342,11 +341,11 @@ namespace HarmonyAudio.Scripts
                             _instance._soundSources.Count < _instance.maxSoundPoolSize)
                         {
                             AudioSource newSource = _instance.CreateNewSoundSource(); // Dynamic source
-                            newSource.volume = _instance.soundsVolume * _instance.masterVolume;
-                            newSource.PlayOneShot(randomClip);
+                            newSource.volume = _instance.soundsVolume * _instance.masterVolume * clipWithVolume.Volume;
+                            newSource.PlayOneShot(clipWithVolume.Clip);
 
                             // Start cleanup coroutine
-                            _instance.StartCoroutine(_instance.CleanupSoundSourceAfterPlay(newSource, randomClip));
+                            _instance.StartCoroutine(_instance.CleanupSoundSourceAfterPlay(newSource, clipWithVolume.Clip));
                         }
                         else
                         {
@@ -667,22 +666,22 @@ namespace HarmonyAudio.Scripts
             AudioAsset asset = _instance.audioLibrary.GetVoiceAsset(voiceClip);
             if (asset != null)
             {
-                AudioClip clip = GetClipFromAsset(asset);
+                AudioClipWithVolume clipWithVolume = GetClipFromAsset(asset);
 
-                if (clip != null)
+                if (clipWithVolume != null && clipWithVolume.Clip != null)
                 {
                     AudioSource availableSource = _instance._voiceSources.Find(s => !s.isPlaying);
                     if (availableSource != null)
                     {
-                        availableSource.clip = clip;
+                        availableSource.clip = clipWithVolume.Clip;
                         availableSource.loop = loop;
-                        availableSource.volume = _instance.voiceVolume * _instance.masterVolume;
+                        availableSource.volume = _instance.voiceVolume * _instance.masterVolume * clipWithVolume.Volume;
                         availableSource.Play();
 
                         if (!loop)
                         {
                             // Start cleanup coroutine
-                            _instance.StartCoroutine(_instance.CleanupVoiceSourceAfterPlay(availableSource, clip));
+                            _instance.StartCoroutine(_instance.CleanupVoiceSourceAfterPlay(availableSource, clipWithVolume.Clip));
                         }
                     }
                     else
@@ -690,15 +689,15 @@ namespace HarmonyAudio.Scripts
                         if (_instance.maxVoicePoolSize == 0 || _instance._voiceSources.Count < _instance.maxVoicePoolSize)
                         {
                             AudioSource newSource = _instance.CreateNewVoiceSource(); // Dynamic source
-                            newSource.clip = clip;
+                            newSource.clip = clipWithVolume.Clip;
                             newSource.loop = loop;
-                            newSource.volume = _instance.voiceVolume * _instance.masterVolume;
+                            newSource.volume = _instance.voiceVolume * _instance.masterVolume * clipWithVolume.Volume;
                             newSource.Play();
 
                             if (!loop)
                             {
                                 // Start cleanup coroutine
-                                _instance.StartCoroutine(_instance.CleanupVoiceSourceAfterPlay(newSource, clip));
+                                _instance.StartCoroutine(_instance.CleanupVoiceSourceAfterPlay(newSource, clipWithVolume.Clip));
                             }
                         }
                         else
@@ -727,7 +726,7 @@ namespace HarmonyAudio.Scripts
         {
             if (_instance == null)
             {
-                Debug.LogError("AudioManager instance not found.");
+                Debug.LogError("AudioManager instance not found. Ensure an AudioManager exists in the scene.");
                 return;
             }
             
@@ -740,22 +739,22 @@ namespace HarmonyAudio.Scripts
             AudioAsset asset = _instance.audioLibrary.GetVoiceAsset(voiceClip);
             if (asset != null)
             {
-                AudioClip randomClip = GetRandomClipFromAsset(asset);
+                AudioClipWithVolume clipWithVolume = GetRandomClipFromAsset(asset);
 
-                if (randomClip != null)
+                if (clipWithVolume != null && clipWithVolume.Clip != null)
                 {
                     AudioSource availableSource = _instance._voiceSources.Find(s => !s.isPlaying);
                     if (availableSource != null)
                     {
-                        availableSource.clip = randomClip;
+                        availableSource.clip = clipWithVolume.Clip;
                         availableSource.loop = loop;
-                        availableSource.volume = _instance.voiceVolume * _instance.masterVolume;
+                        availableSource.volume = _instance.voiceVolume * _instance.masterVolume * clipWithVolume.Volume;
                         availableSource.Play();
 
                         if (!loop)
                         {
                             // Start cleanup coroutine
-                            _instance.StartCoroutine(_instance.CleanupVoiceSourceAfterPlay(availableSource, randomClip));
+                            _instance.StartCoroutine(_instance.CleanupVoiceSourceAfterPlay(availableSource, clipWithVolume.Clip));
                         }
                     }
                     else
@@ -763,15 +762,15 @@ namespace HarmonyAudio.Scripts
                         if (_instance.maxVoicePoolSize == 0 || _instance._voiceSources.Count < _instance.maxVoicePoolSize)
                         {
                             AudioSource newSource = _instance.CreateNewVoiceSource(); // Dynamic source
-                            newSource.clip = randomClip;
+                            newSource.clip = clipWithVolume.Clip;
                             newSource.loop = loop;
-                            newSource.volume = _instance.voiceVolume * _instance.masterVolume;
+                            newSource.volume = _instance.voiceVolume * _instance.masterVolume * clipWithVolume.Volume;
                             newSource.Play();
 
                             if (!loop)
                             {
                                 // Start cleanup coroutine
-                                _instance.StartCoroutine(_instance.CleanupVoiceSourceAfterPlay(newSource, randomClip));
+                                _instance.StartCoroutine(_instance.CleanupVoiceSourceAfterPlay(newSource, clipWithVolume.Clip));
                             }
                         }
                         else
@@ -957,19 +956,27 @@ namespace HarmonyAudio.Scripts
         
         #region Helper Methods
         
-        private static AudioClip GetClipFromAsset(AudioAsset asset)
+        /// <summary>
+        /// Gets a clip from the AudioAsset.
+        /// </summary>
+        /// <param name="asset"></param>
+        /// <returns></returns>
+        private static AudioClipWithVolume GetClipFromAsset(AudioAsset asset)
         {
             if (asset.allowMultipleClips)
             {
                 if (asset.multipleClips.Count > 0)
                 {
-                    int randomIndex = Random.Range(0, asset.multipleClips.Count);
-                    return asset.multipleClips[randomIndex];
+                    var clipWithVolume = asset.multipleClips[0];
+                    return new AudioClipWithVolume(clipWithVolume.clip, clipWithVolume.volume);
                 }
             }
             else
             {
-                return asset.singleClip;
+                if (asset.singleClip != null && asset.singleClip.clip != null)
+                {
+                    return new AudioClipWithVolume(asset.singleClip.clip, asset.singleClip.volume);
+                }
             }
             return null;
         }
@@ -979,15 +986,22 @@ namespace HarmonyAudio.Scripts
         /// </summary>
         /// <param name="asset">The AudioAsset to retrieve a random clip from.</param>
         /// <returns>A random AudioClip, or null if the asset is empty or invalid.</returns>
-        private static AudioClip GetRandomClipFromAsset(AudioAsset asset)
+
+        private static AudioClipWithVolume GetRandomClipFromAsset(AudioAsset asset)
         {
             if (asset.allowMultipleClips && asset.multipleClips.Count > 0)
             {
                 int randomIndex = Random.Range(0, asset.multipleClips.Count);
-                return asset.multipleClips[randomIndex];
+                var clipWithVolume = asset.multipleClips[randomIndex];
+                return new AudioClipWithVolume(clipWithVolume.clip, clipWithVolume.volume);
             }
-            
-            Debug.LogWarning("Asset does not allow multiple clips, or has no clips.");
+            else if (!asset.allowMultipleClips)
+            {
+                if (asset.singleClip != null && asset.singleClip.clip != null)
+                {
+                    return new AudioClipWithVolume(asset.singleClip.clip, asset.singleClip.volume);
+                }
+            }
             return null;
         }
 
@@ -1026,3 +1040,19 @@ namespace HarmonyAudio.Scripts
         #endregion
     }
 }
+
+namespace HarmonyAudio.Scripts
+{
+    public class AudioClipWithVolume
+    {
+        public readonly AudioClip Clip;
+        public readonly float Volume;
+
+        public AudioClipWithVolume(AudioClip clip, float volume)
+        {
+            this.Clip = clip;
+            this.Volume = volume;
+        }
+    }
+}
+
