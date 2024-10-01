@@ -63,24 +63,6 @@ namespace HarmonyAudio.Editor
             
             EditorGUILayout.PropertyField(_enumGenerationPathProp, new GUIContent("Library Path"));
             
-            // Button for opening folder panel
-            if (GUILayout.Button("Browse", GUILayout.Width(70)))
-            {
-                string selectedPath = EditorUtility.OpenFolderPanel("Select Library Folder", _enumGenerationPathProp.stringValue, "");
-                if (!string.IsNullOrEmpty(selectedPath))
-                {
-                    // Convert absolute path to relative path if it's within the project
-                    if (selectedPath.StartsWith(Application.dataPath))
-                    {
-                        selectedPath = "Assets" + selectedPath.Substring(Application.dataPath.Length);
-                    }
-
-                    _enumGenerationPathProp.stringValue = selectedPath;
-
-                    // Apply the modification immediately
-                    serializedObject.ApplyModifiedProperties();
-                }
-            }
             EditorGUILayout.EndHorizontal();
             
             // Path validation (optional)

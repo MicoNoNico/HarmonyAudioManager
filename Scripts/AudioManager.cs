@@ -51,7 +51,7 @@ namespace HarmonyAudio.Scripts
         [SerializeField, HideInInspector] private int initialVoicePoolSize = 3;
         [SerializeField, HideInInspector] private int maxVoicePoolSize = 10; // Set to 0 for unlimited
         
-        [SerializeField, HideInInspector] private string libraryGenerationPath = "Assets/HarmonyAudio/Scripts/Enums";
+        [SerializeField, HideInInspector] private string libraryGenerationPath = "Assets/HarmonyAudio/Scripts/Library";
         public string EnumGenerationPath
         {
             get => libraryGenerationPath;
