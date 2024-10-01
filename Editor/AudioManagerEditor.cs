@@ -16,6 +16,7 @@ namespace HarmonyAudio.Editor
         private SerializedProperty _enableVoiceProp;
         private SerializedProperty _initialVoicePoolSizeProp;
         private SerializedProperty _maxVoicePoolSizeProp;
+        private SerializedProperty _enumGenerationPathProp;
 
         // Variable for tracking the foldout state
         private bool _volumeControlsFoldout = true;
@@ -32,14 +33,15 @@ namespace HarmonyAudio.Editor
             _enableVoiceProp = serializedObject.FindProperty("enableVoice");
             _initialVoicePoolSizeProp = serializedObject.FindProperty("initialVoicePoolSize");
             _maxVoicePoolSizeProp = serializedObject.FindProperty("maxVoicePoolSize");
+            _enumGenerationPathProp = serializedObject.FindProperty("libraryGenerationPath");
         }
 
         public override void OnInspectorGUI()
         {
-            // Custom box
-            GUIStyle boxStyle = new GUIStyle(GUI.skin.box);
-            boxStyle.normal.background = new Texture2D(2, 2);
-            boxStyle.padding = new RectOffset(10, 10, 10, 10);  // Padding inside the box
+            // Custom box (temporarily disabled)
+            // GUIStyle boxStyle = new GUIStyle(GUI.skin.box);
+            // boxStyle.normal.background = new Texture2D(2, 2);
+            // boxStyle.padding = new RectOffset(10, 10, 10, 10);  // Padding inside the box
             
             serializedObject.Update();
             
@@ -48,17 +50,50 @@ namespace HarmonyAudio.Editor
                 float inspectorWidth = EditorGUIUtility.currentViewWidth - 30; // Get the current inspector width
                 
                 GUILayout.BeginHorizontal();
-                //GUILayout.FlexibleSpace(); // Center the image
                 GUILayout.Label(_headerImage, GUILayout.Width(inspectorWidth), GUILayout.Height(inspectorWidth/3)); // Adjust the size as needed
-                //GUILayout.FlexibleSpace();
                 GUILayout.EndHorizontal();
             }
-            
             DrawDefaultInspector();
+            
+            GUILayout.Space(20);
+            
+            // Enum Generation Path Input Field
+            EditorGUILayout.LabelField("Library Generation Settings", EditorStyles.boldLabel);
+            EditorGUILayout.BeginHorizontal();
+            
+            EditorGUILayout.PropertyField(_enumGenerationPathProp, new GUIContent("Library Path"));
+            
+            // Button for opening folder panel
+            if (GUILayout.Button("Browse", GUILayout.Width(70)))
+            {
+                string selectedPath = EditorUtility.OpenFolderPanel("Select Library Folder", _enumGenerationPathProp.stringValue, "");
+                if (!string.IsNullOrEmpty(selectedPath))
+                {
+                    // Convert absolute path to relative path if it's within the project
+                    if (selectedPath.StartsWith(Application.dataPath))
+                    {
+                        selectedPath = "Assets" + selectedPath.Substring(Application.dataPath.Length);
+                    }
+
+                    _enumGenerationPathProp.stringValue = selectedPath;
+
+                    // Apply the modification immediately
+                    serializedObject.ApplyModifiedProperties();
+                }
+            }
+            EditorGUILayout.EndHorizontal();
+            
+            // Path validation (optional)
+            if (!System.IO.Directory.Exists(_enumGenerationPathProp.stringValue))
+            {
+                EditorGUILayout.HelpBox("The specified path does not exist. A folder will be created at that location.", MessageType.Warning);
+            }
+            
+            EditorGUILayout.HelpBox("The path must be within the HarmonyAudio folder.", MessageType.Info);
 
             EditorGUILayout.Space(20);
 
-            GUILayout.BeginVertical(boxStyle);
+            GUILayout.BeginVertical();
             
             GUILayout.BeginHorizontal();
             GUILayout.Space(10); // Adds padding before the foldout
@@ -95,15 +130,14 @@ namespace HarmonyAudio.Editor
 
             EditorGUILayout.Space(20);
             
-            GUILayout.BeginHorizontal();
             _extensionsFoldout = EditorGUILayout.Foldout(_extensionsFoldout, "Extensions", true, EditorStyles.foldoutHeader);
-            GUILayout.EndHorizontal();
 
             if (_extensionsFoldout)
             {
                 GUILayout.Space(10);
-                // Begin the custom-colored section
-                EditorGUILayout.BeginVertical(boxStyle);
+                EditorGUI.indentLevel++;
+
+                EditorGUILayout.BeginVertical();
                 
                 EditorGUILayout.BeginHorizontal();
                 EditorGUILayout.LabelField("Voice settings extension", GUILayout.Width(150));
@@ -131,11 +165,12 @@ namespace HarmonyAudio.Editor
                     EditorGUILayout.HelpBox("Voice over extension enabled, make sure to add your new clips in your library!", MessageType.Info);
                 }
                 
+                // Reset indent level
+                EditorGUI.indentLevel--;
+                
                 // End the custom-colored section
                 EditorGUILayout.EndVertical();                
             }
-            
-
             
             serializedObject.ApplyModifiedProperties();
         }

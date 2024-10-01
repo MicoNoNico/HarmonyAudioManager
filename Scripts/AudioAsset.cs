@@ -15,7 +15,7 @@ using UnityEngine;
 
 namespace HarmonyAudio.Scripts
 {
-    [CreateAssetMenu(fileName = "New Audio Asset", menuName = "HarmonyAudio/Audio Asset")]
+    [CreateAssetMenu(fileName = "Audio Asset", menuName = "HarmonyAudio/New Audio Asset")]
     public class AudioAsset : ScriptableObject
     {
         public bool allowMultipleClips = false;

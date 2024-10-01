@@ -60,8 +60,14 @@ namespace HarmonyAudio.Editor
 
         private void GenerateEnums(AudioLibrary audioLibrary)
         {
-            string libraryName = audioLibrary.ToString();
-            string enumDirectory = "Assets/HarmonyAudio/Scripts/Enums";
+            var audioManager = FindObjectOfType<AudioManager>();
+            if (audioManager == null)
+            {
+                Debug.LogError("AudioManager instance not found in the scene.");
+                return;
+            }
+            
+            string enumDirectory = audioManager.EnumGenerationPath;
             if (!Directory.Exists(enumDirectory))
             {
                 Directory.CreateDirectory(enumDirectory);
@@ -69,7 +75,7 @@ namespace HarmonyAudio.Editor
 
             GenerateEnumFile(enumDirectory, "MusicClips", audioLibrary.musicAssets);
             GenerateEnumFile(enumDirectory, "SoundClips", audioLibrary.soundAssets);
-            GenerateEnumFile(enumDirectory, "VoiceClips", audioLibrary.voiceAssets);
+            if (audioManager.enableVoice) GenerateEnumFile(enumDirectory, "VoiceClips", audioLibrary.voiceAssets);
 
             AssetDatabase.Refresh();
             Debug.Log("Library regenerated successfully.");
