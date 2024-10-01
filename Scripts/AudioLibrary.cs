@@ -11,7 +11,6 @@
  */
 
 using System.Collections.Generic;
-using HarmonyAudio.Scripts.Enums;
 using UnityEngine;
 
 namespace HarmonyAudio.Scripts
