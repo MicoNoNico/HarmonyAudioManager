@@ -83,8 +83,8 @@ namespace HarmonyAudio.Editor
         private void GenerateEnumFile(string directory, string enumName, List<AudioAsset> assets)
         {
             StringBuilder sb = new StringBuilder();
-            //sb.AppendLine("namespace HarmonyAudio.Scripts.Enums");
-            //sb.AppendLine("{");
+            sb.AppendLine("namespace HarmonyAudio.Scripts.Library");
+            sb.AppendLine("{");
             sb.AppendLine($"\tpublic enum {enumName}");
             sb.AppendLine("\t{");
 
@@ -98,7 +98,7 @@ namespace HarmonyAudio.Editor
             }
 
             sb.AppendLine("\t}");
-            //sb.AppendLine("}");
+            sb.AppendLine("}");
 
             string filePath = Path.Combine(directory, $"{enumName}.cs");
             File.WriteAllText(filePath, sb.ToString());
