@@ -25,6 +25,14 @@ namespace HarmonyAudio.Scripts
 
         [Tooltip("List of Audio Clips with individual volumes")]
         public List<ClipWithVolume> multipleClips = new List<ClipWithVolume>();
+        
+        // Spatial audio settings
+        public bool useSpatialAudio = false;
+        [Range(0f, 1f)]
+        public float spatialBlend = 1f; // 0 = 2D, 1 = 3D
+        public AudioRolloffMode rolloffMode = AudioRolloffMode.Logarithmic;
+        public float minDistance = 1f;
+        public float maxDistance = 100f;
     }
     
     [Serializable]

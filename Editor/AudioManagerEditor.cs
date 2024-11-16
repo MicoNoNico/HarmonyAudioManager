@@ -122,7 +122,7 @@ namespace HarmonyAudio.Editor
                 EditorGUILayout.BeginVertical();
                 
                 EditorGUILayout.BeginHorizontal();
-                EditorGUILayout.LabelField("Voice settings extension", GUILayout.Width(150));
+                EditorGUILayout.LabelField("Voice settings extension", GUILayout.Width(200));
 
                 string voiceButtonLabel = _enableVoiceProp.boolValue ? "Disable" : "Enable";
                 if (GUILayout.Button(voiceButtonLabel, GUILayout.Width(60)))

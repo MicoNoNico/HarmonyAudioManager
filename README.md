@@ -10,7 +10,6 @@ Harmony is a simple and efficient audio manager for Unity that enables easy play
 
 - [Getting Started](#getting-started)
 - [Documentation](#documentation)
-- [Upcoming Features](#upcoming-features)
 
 ## Features
 
@@ -40,6 +39,9 @@ Harmony is a simple and efficient audio manager for Unity that enables easy play
 
 - **Settings Persistence**: Save and load volume settings using `PlayerPrefs`.
 
+
+- **Spatial Audio**: Play sounds spatially in 3D space, with per-asset spatial settings.
+
 ## Installation
 
 1. Download the latest `.unitypackage` file from the [Releases](https://github.com/MicoNoNico/HarmonyAudioManager/releases) section.
@@ -57,6 +59,7 @@ Harmony is a simple and efficient audio manager for Unity that enables easy play
 - [4. Assigning Audio Assets to the Library](#4-assigning-audio-assets-to-the-library)
 - [5. Regenerating Library](#5-regenerating-library)
 - [6. Using the Audio Manager](#6-using-the-audio-manager)
+- [7. Implementing Spatial Audio](#7-implementing-spatial-audio)
 
 ### [1] Creating the Audio Manager
 
@@ -103,9 +106,20 @@ Harmony is a simple and efficient audio manager for Unity that enables easy play
    - **Single Clip**:
       - Set **Allow Multiple Clips** to **False**.
       - Assign an `AudioClip` to the **Single Clip** field.
-   - **Multiple Clips**:
+   - **Multiple Clips** (Optional):
       - Set **Allow Multiple Clips** to **True**.
       - Add `AudioClip`s to the **Multiple Clips** list.
+   - **Spatial Audio Settings** (Optional):
+     - **Use Spatial Audio**:
+         - Check this to enable spatial audio for this asset.
+     - **Spatial Blend**:
+         - Set between `0.0` (2D) and `1.0` (3D).
+     - **Rolloff Mode**:
+         - Choose how the sound attenuates over distance (`Logarithmic`, `Linear`, or `Custom`).
+     - **Min Distance**:
+         - The distance within which the audio source is at full volume.
+     - **Max Distance**:
+         - The distance beyond which the audio source will no longer decrease in volume.
 
 ### [4] Assigning Audio Assets to the Library
 
@@ -134,11 +148,6 @@ Harmony is a simple and efficient audio manager for Unity that enables easy play
       - Generate or update the `MusicClips` and `SoundClips` enums based on your `AudioClip` names.
       - Create or update the enum files in `HarmonyAudio/Scripts/Enums/`.
    - Wait for Unity to recompile the scripts.
-
-
-2. **[Optional] Verify the Enums**:
-   - Navigate to `Assets/HarmonyAudio/Scripts/Enums/`.
-   - Open `MusicClips.cs` and `SoundClips.cs` to verify that the enums have been generated correctly.
 
 ### [6] Using the Audio Manager
 
@@ -173,10 +182,10 @@ For more detailed information on the `AudioManager` and its capabilities, refer 
 
 #### Music Methods
 
-- `PlayMusic(MusicClips musicClip, bool loop = true)`
-    - Plays a music clip.
-- `PlayRandomMusic(MusicClips musicClip, bool loop = true)`
-    - Plays a random music clip from an `AudioAsset` that allows multiple clips.
+- `PlayMusic(MusicClips musicClip, bool loop = true, Transform parentTransform = null)`
+    - Plays a music clip. Supports spatial audio if a parentTransform is provided.
+- `PlayRandomMusic(MusicClips musicClip, bool loop = true, Transform parentTransform = null)`
+    - Plays a random music clip from an `AudioAsset` that allows multiple clips. Supports spatial audio if a parentTransform is provided.
 - `StopMusic()`
     - Stops the currently playing music.
 - `PauseMusic()`
@@ -192,10 +201,10 @@ For more detailed information on the `AudioManager` and its capabilities, refer 
 
 #### Sound Methods
 
-- `PlaySound(SoundClips soundClip)`
-    - Plays a sound effect.
-- `PlayRandomSound(SoundClips soundClip)`
-    - Plays a random sound effect from an `AudioAsset` that allows multiple clips.
+- `PlaySound(SoundClips soundClip, Transform parentTransform = null)`
+    - Plays a sound effect. If a parentTransform is provided, the sound is played as a spatial audio source attached to that transform.
+- `PlayRandomSound(SoundClips soundClip, Transform parentTransform = null)`
+    - Plays a random sound effect from an `AudioAsset` that allows multiple clips. Supports spatial audio if a parentTransform is provided.
 - `SetSoundVolume(float volume)`
     - Sets the sound effects volume.
 - `GetSoundVolume()`
@@ -203,10 +212,10 @@ For more detailed information on the `AudioManager` and its capabilities, refer 
 
 #### Voice Methods (if enabled)
 
-- `PlayVoice(VoiceClips voiceClip, bool loop = false)`
-    - Plays a voice clip.
-- `PlayRandomVoice(VoiceClips voiceClip, bool loop = false)`
-    - Plays a random voice clip from an `AudioAsset` that allows multiple clips.
+- `PlayVoice(VoiceClips voiceClip, bool loop = false, Transform parentTransform = null)`
+    - Plays a voice clip. Supports spatial audio if a parentTransform is provided.
+- `PlayRandomVoice(VoiceClips voiceClip, bool loop = false, Transform parentTransform = null)`
+    - Plays a random voice clip from an `AudioAsset` that allows multiple clips. Supports spatial audio if a parentTransform is provided.
 - `StopVoice()`
     - Stops all currently playing voice clips.
 - `PauseVoice()`
@@ -232,8 +241,3 @@ For more detailed information on the `AudioManager` and its capabilities, refer 
     - Loads the saved volume settings.
 
 
-## Upcoming Features
-
-*Note: This is a list of upcoming features that I plan to add in due time. This list is also subject to change.*
-
-[Coming soon...]

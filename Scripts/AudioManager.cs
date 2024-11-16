@@ -117,7 +117,8 @@ namespace HarmonyAudio.Scripts
         /// </summary>
         /// <param name="musicClip">The name of the music clip to play.</param>
         /// <param name="loop">Whether the music should loop.</param>
-        public static void PlayMusic(MusicClips musicClip, bool loop = true)
+        /// <param name="parentTransform">Optional parent transform for spatial audio.</param>
+        public static void PlayMusic(MusicClips musicClip, bool loop = true, Transform parentTransform = null)
         {
             if (_instance == null)
             {
@@ -132,10 +133,26 @@ namespace HarmonyAudio.Scripts
 
                 if (clip != null)
                 {
-                    _instance.musicSource.clip = clip.Clip;
-                    _instance.musicSource.loop = loop;
-                    _instance.musicSource.volume = _instance.musicVolume * _instance.masterVolume * clip.Volume;
-                    _instance.musicSource.Play();
+                    if (parentTransform != null)
+                    {
+                        // Create and parent a spatial AudioSource
+                        AudioSource newSource = _instance.CreateNewSpatialSoundSource(parentTransform, asset);
+                        newSource.clip = clip.Clip;
+                        newSource.loop = loop;
+                        newSource.volume = _instance.musicVolume * _instance.masterVolume * clip.Volume;
+                        newSource.Play();
+
+                        // Replace the current music source reference if desired
+                        _instance.musicSource = newSource;
+                    }
+                    else
+                    {
+                        // Use the default music source for non-spatial audio
+                        _instance.musicSource.clip = clip.Clip;
+                        _instance.musicSource.loop = loop;
+                        _instance.musicSource.volume = _instance.musicVolume * _instance.masterVolume * clip.Volume;
+                        _instance.musicSource.Play();
+                    }
                 }
                 else
                 {
@@ -153,7 +170,8 @@ namespace HarmonyAudio.Scripts
         /// </summary>
         /// <param name="musicClip">The array of music clips to choose from.</param>
         /// <param name="loop">Whether the music should loop.</param>
-        public static void PlayRandomMusic(MusicClips musicClip, bool loop = true)
+        /// <param name="parentTransform">Optional parent transform for spatial audio.</param>
+        public static void PlayRandomMusic(MusicClips musicClip, bool loop = true, Transform parentTransform = null)
         {
             if (_instance == null)
             {
@@ -168,10 +186,26 @@ namespace HarmonyAudio.Scripts
 
                 if (randomClip != null)
                 {
-                    _instance.musicSource.clip = randomClip.Clip;
-                    _instance.musicSource.loop = loop;
-                    _instance.musicSource.volume = _instance.musicVolume * _instance.masterVolume * randomClip.Volume;
-                    _instance.musicSource.Play();
+                    if (parentTransform != null)
+                    {
+                        // Create and parent a spatial AudioSource
+                        AudioSource newSource = _instance.CreateNewSpatialSoundSource(parentTransform, asset);
+                        newSource.clip = randomClip.Clip;
+                        newSource.loop = loop;
+                        newSource.volume = _instance.musicVolume * _instance.masterVolume * randomClip.Volume;
+                        newSource.Play();
+
+                        // Replace the current music source reference if desired
+                        _instance.musicSource = newSource;
+                    }
+                    else
+                    {
+                        // Use the default music source for non-spatial audio
+                        _instance.musicSource.clip = randomClip.Clip;
+                        _instance.musicSource.loop = loop;
+                        _instance.musicSource.volume = _instance.musicVolume * _instance.masterVolume * randomClip.Volume;
+                        _instance.musicSource.Play();
+                    }
                 }
                 else
                 {
@@ -180,7 +214,7 @@ namespace HarmonyAudio.Scripts
             }
             else
             {
-                Debug.LogWarning($"Sound asset '{musicClip}' not found.");
+                Debug.LogWarning($"Music asset '{musicClip}' not found.");
             }
         }
 
@@ -267,7 +301,8 @@ namespace HarmonyAudio.Scripts
         /// Plays a sound effect by name.
         /// </summary>
         /// <param name="soundClip">The name of the sound effect clip to play.</param>
-        public static void PlaySound(SoundClips soundClip)
+        /// <param name="parentTransform">Optional parent transform for spatial audio.</param>
+        public static void PlaySound(SoundClips soundClip, Transform parentTransform = null)
         {
             if (_instance == null)
             {
@@ -282,27 +317,42 @@ namespace HarmonyAudio.Scripts
 
                 if (clipWithVolume != null && clipWithVolume.Clip != null)
                 {
-                    AudioSource availableSource = _instance._soundSources.Find(s => !s.isPlaying);
-                    if (availableSource != null)
+                    if (parentTransform != null)
                     {
-                        availableSource.volume = _instance.soundsVolume * _instance.masterVolume * clipWithVolume.Volume;
-                        availableSource.PlayOneShot(clipWithVolume.Clip);
+                        // Spatial sound: create a new AudioSource and parent it
+                        AudioSource newSource = _instance.CreateNewSpatialSoundSource(parentTransform, asset);
+                        newSource.volume = _instance.soundsVolume * _instance.masterVolume * clipWithVolume.Volume;
+                        newSource.clip = clipWithVolume.Clip;
+                        newSource.Play();
+
+                        // Start cleanup coroutine
+                        _instance.StartCoroutine(_instance.CleanupSpatialSoundSourceAfterPlay(newSource));
                     }
                     else
                     {
-                        if (_instance.maxSoundPoolSize == 0 ||
-                            _instance._soundSources.Count < _instance.maxSoundPoolSize)
+                        // Non-spatial sound: use pooled AudioSources
+                        AudioSource availableSource = _instance._soundSources.Find(s => !s.isPlaying);
+                        if (availableSource != null)
                         {
-                            AudioSource newSource = _instance.CreateNewSoundSource(); // Dynamic source
-                            newSource.volume = _instance.soundsVolume * _instance.masterVolume * clipWithVolume.Volume;
-                            newSource.PlayOneShot(clipWithVolume.Clip);
-
-                            // Start cleanup coroutine
-                            _instance.StartCoroutine(_instance.CleanupSoundSourceAfterPlay(newSource, clipWithVolume.Clip));
+                            availableSource.volume = _instance.soundsVolume * _instance.masterVolume * clipWithVolume.Volume;
+                            availableSource.PlayOneShot(clipWithVolume.Clip);
                         }
                         else
                         {
-                            Debug.LogWarning("All Sound AudioSources are busy, and max pool size reached.");
+                            if (_instance.maxSoundPoolSize == 0 ||
+                                _instance._soundSources.Count < _instance.maxSoundPoolSize)
+                            {
+                                AudioSource newSource = _instance.CreateNewSoundSource(); // Dynamic source
+                                newSource.volume = _instance.soundsVolume * _instance.masterVolume * clipWithVolume.Volume;
+                                newSource.PlayOneShot(clipWithVolume.Clip);
+
+                                // Start cleanup coroutine
+                                _instance.StartCoroutine(_instance.CleanupSoundSourceAfterPlay(newSource, clipWithVolume.Clip));
+                            }
+                            else
+                            {
+                                Debug.LogWarning("All Sound AudioSources are busy, and max pool size reached.");
+                            }
                         }
                     }
                 }
@@ -316,12 +366,13 @@ namespace HarmonyAudio.Scripts
                 Debug.LogWarning($"Sound asset '{soundClip}' not found.");
             }
         }
-
+        
         /// <summary>
-        /// Plays a random sound effect by name.
+        /// Plays a random sound effect from an AudioAsset.
         /// </summary>
-        /// <param name="soundClip"></param>
-        public static void PlayRandomSound(SoundClips soundClip)
+        /// <param name="soundClip">The name of the sound effect clip to play.</param>
+        /// <param name="parentTransform">Optional parent transform for spatial audio.</param>
+        public static void PlayRandomSound(SoundClips soundClip, Transform parentTransform = null)
         {
             if (_instance == null)
             {
@@ -336,33 +387,48 @@ namespace HarmonyAudio.Scripts
 
                 if (clipWithVolume != null && clipWithVolume.Clip != null)
                 {
-                    AudioSource availableSource = _instance._soundSources.Find(s => !s.isPlaying);
-                    if (availableSource != null)
+                    if (parentTransform != null)
                     {
-                        availableSource.volume = _instance.soundsVolume * _instance.masterVolume * clipWithVolume.Volume;
-                        availableSource.PlayOneShot(clipWithVolume.Clip);
+                        // Spatial sound: create a new AudioSource and parent it
+                        AudioSource newSource = _instance.CreateNewSpatialSoundSource(parentTransform, asset);
+                        newSource.volume = _instance.soundsVolume * _instance.masterVolume * clipWithVolume.Volume;
+                        newSource.clip = clipWithVolume.Clip;
+                        newSource.Play();
+
+                        // Start cleanup coroutine
+                        _instance.StartCoroutine(_instance.CleanupSpatialSoundSourceAfterPlay(newSource));
                     }
                     else
                     {
-                        if (_instance.maxSoundPoolSize == 0 ||
-                            _instance._soundSources.Count < _instance.maxSoundPoolSize)
+                        // Non-spatial sound: use pooled AudioSources
+                        AudioSource availableSource = _instance._soundSources.Find(s => !s.isPlaying);
+                        if (availableSource != null)
                         {
-                            AudioSource newSource = _instance.CreateNewSoundSource(); // Dynamic source
-                            newSource.volume = _instance.soundsVolume * _instance.masterVolume * clipWithVolume.Volume;
-                            newSource.PlayOneShot(clipWithVolume.Clip);
-
-                            // Start cleanup coroutine
-                            _instance.StartCoroutine(_instance.CleanupSoundSourceAfterPlay(newSource, clipWithVolume.Clip));
+                            availableSource.volume = _instance.soundsVolume * _instance.masterVolume * clipWithVolume.Volume;
+                            availableSource.PlayOneShot(clipWithVolume.Clip);
                         }
                         else
                         {
-                            Debug.LogWarning("All Sound AudioSources are busy, and max pool size reached.");
+                            if (_instance.maxSoundPoolSize == 0 || 
+                                _instance._soundSources.Count < _instance.maxSoundPoolSize)
+                            {
+                                AudioSource newSource = _instance.CreateNewSoundSource(); // Dynamic source
+                                newSource.volume = _instance.soundsVolume * _instance.masterVolume * clipWithVolume.Volume;
+                                newSource.PlayOneShot(clipWithVolume.Clip);
+
+                                // Start cleanup coroutine
+                                _instance.StartCoroutine(_instance.CleanupSoundSourceAfterPlay(newSource, clipWithVolume.Clip));
+                            }
+                            else
+                            {
+                                Debug.LogWarning("All Sound AudioSources are busy, and max pool size reached.");
+                            }
                         }
                     }
                 }
                 else
                 {
-                    Debug.LogWarning($"No clip found for '{soundClip}'.");
+                    Debug.LogWarning($"No clip found for '{soundClip}' or the asset contains no clips.");
                 }
             }
             else
@@ -656,14 +722,15 @@ namespace HarmonyAudio.Scripts
         /// </summary>
         /// <param name="voiceClip">The name of the voice clip to play.</param>
         /// <param name="loop">Whether the voice clip should loop.</param>
-        public static void PlayVoice(VoiceClips voiceClip, bool loop = false)
+        /// <param name="parentTransform">Optional parent transform for spatial audio.</param>
+        public static void PlayVoice(VoiceClips voiceClip, bool loop = false, Transform parentTransform = null)
         {
             if (_instance == null)
             {
                 Debug.LogError("AudioManager instance not found. Ensure an AudioManager exists in the scene.");
                 return;
             }
-            
+
             if (!_instance.enableVoice)
             {
                 Debug.LogWarning("Voice Extension is not enabled.");
@@ -677,39 +744,58 @@ namespace HarmonyAudio.Scripts
 
                 if (clipWithVolume != null && clipWithVolume.Clip != null)
                 {
-                    AudioSource availableSource = _instance._voiceSources.Find(s => !s.isPlaying);
-                    if (availableSource != null)
+                    if (parentTransform != null)
                     {
-                        availableSource.clip = clipWithVolume.Clip;
-                        availableSource.loop = loop;
-                        availableSource.volume = _instance.voiceVolume * _instance.masterVolume * clipWithVolume.Volume;
-                        availableSource.Play();
+                        // Spatial voice: create a new AudioSource and parent it
+                        AudioSource newSource = _instance.CreateNewSpatialSoundSource(parentTransform, asset);
+                        newSource.clip = clipWithVolume.Clip;
+                        newSource.loop = loop;
+                        newSource.volume = _instance.voiceVolume * _instance.masterVolume * clipWithVolume.Volume;
+                        newSource.Play();
 
                         if (!loop)
                         {
                             // Start cleanup coroutine
-                            _instance.StartCoroutine(_instance.CleanupVoiceSourceAfterPlay(availableSource, clipWithVolume.Clip));
+                            _instance.StartCoroutine(_instance.CleanupSpatialSoundSourceAfterPlay(newSource));
                         }
                     }
                     else
                     {
-                        if (_instance.maxVoicePoolSize == 0 || _instance._voiceSources.Count < _instance.maxVoicePoolSize)
+                        // Non-spatial voice: use pooled AudioSources
+                        AudioSource availableSource = _instance._voiceSources.Find(s => !s.isPlaying);
+                        if (availableSource != null)
                         {
-                            AudioSource newSource = _instance.CreateNewVoiceSource(); // Dynamic source
-                            newSource.clip = clipWithVolume.Clip;
-                            newSource.loop = loop;
-                            newSource.volume = _instance.voiceVolume * _instance.masterVolume * clipWithVolume.Volume;
-                            newSource.Play();
+                            availableSource.clip = clipWithVolume.Clip;
+                            availableSource.loop = loop;
+                            availableSource.volume = _instance.voiceVolume * _instance.masterVolume * clipWithVolume.Volume;
+                            availableSource.Play();
 
                             if (!loop)
                             {
                                 // Start cleanup coroutine
-                                _instance.StartCoroutine(_instance.CleanupVoiceSourceAfterPlay(newSource, clipWithVolume.Clip));
+                                _instance.StartCoroutine(_instance.CleanupVoiceSourceAfterPlay(availableSource, clipWithVolume.Clip));
                             }
                         }
                         else
                         {
-                            Debug.LogWarning("All Voice AudioSources are busy, and max pool size reached.");
+                            if (_instance.maxVoicePoolSize == 0 || _instance._voiceSources.Count < _instance.maxVoicePoolSize)
+                            {
+                                AudioSource newSource = _instance.CreateNewVoiceSource(); // Dynamic source
+                                newSource.clip = clipWithVolume.Clip;
+                                newSource.loop = loop;
+                                newSource.volume = _instance.voiceVolume * _instance.masterVolume * clipWithVolume.Volume;
+                                newSource.Play();
+
+                                if (!loop)
+                                {
+                                    // Start cleanup coroutine
+                                    _instance.StartCoroutine(_instance.CleanupVoiceSourceAfterPlay(newSource, clipWithVolume.Clip));
+                                }
+                            }
+                            else
+                            {
+                                Debug.LogWarning("All Voice AudioSources are busy, and max pool size reached.");
+                            }
                         }
                     }
                 }
@@ -723,20 +809,21 @@ namespace HarmonyAudio.Scripts
                 Debug.LogWarning($"Voice asset '{voiceClip}' not found.");
             }
         }
-        
+
         /// <summary>
         /// Plays a random voice clip by name.
         /// </summary>
-        /// <param name="voiceClip"></param>
-        /// <param name="loop"></param>
-        public static void PlayRandomVoice(VoiceClips voiceClip, bool loop = false)
+        /// <param name="voiceClip">The name of the voice clip to play.</param>
+        /// <param name="loop">Whether the voice clip should loop.</param>
+        /// <param name="parentTransform">Optional parent transform for spatial audio.</param>
+        public static void PlayRandomVoice(VoiceClips voiceClip, bool loop = false, Transform parentTransform = null)
         {
             if (_instance == null)
             {
                 Debug.LogError("AudioManager instance not found. Ensure an AudioManager exists in the scene.");
                 return;
             }
-            
+
             if (!_instance.enableVoice)
             {
                 Debug.LogWarning("Voice Extension is not enabled.");
@@ -750,39 +837,58 @@ namespace HarmonyAudio.Scripts
 
                 if (clipWithVolume != null && clipWithVolume.Clip != null)
                 {
-                    AudioSource availableSource = _instance._voiceSources.Find(s => !s.isPlaying);
-                    if (availableSource != null)
+                    if (parentTransform != null)
                     {
-                        availableSource.clip = clipWithVolume.Clip;
-                        availableSource.loop = loop;
-                        availableSource.volume = _instance.voiceVolume * _instance.masterVolume * clipWithVolume.Volume;
-                        availableSource.Play();
+                        // Spatial voice: create a new AudioSource and parent it
+                        AudioSource newSource = _instance.CreateNewSpatialSoundSource(parentTransform, asset);
+                        newSource.clip = clipWithVolume.Clip;
+                        newSource.loop = loop;
+                        newSource.volume = _instance.voiceVolume * _instance.masterVolume * clipWithVolume.Volume;
+                        newSource.Play();
 
                         if (!loop)
                         {
                             // Start cleanup coroutine
-                            _instance.StartCoroutine(_instance.CleanupVoiceSourceAfterPlay(availableSource, clipWithVolume.Clip));
+                            _instance.StartCoroutine(_instance.CleanupSpatialSoundSourceAfterPlay(newSource));
                         }
                     }
                     else
                     {
-                        if (_instance.maxVoicePoolSize == 0 || _instance._voiceSources.Count < _instance.maxVoicePoolSize)
+                        // Non-spatial voice: use pooled AudioSources
+                        AudioSource availableSource = _instance._voiceSources.Find(s => !s.isPlaying);
+                        if (availableSource != null)
                         {
-                            AudioSource newSource = _instance.CreateNewVoiceSource(); // Dynamic source
-                            newSource.clip = clipWithVolume.Clip;
-                            newSource.loop = loop;
-                            newSource.volume = _instance.voiceVolume * _instance.masterVolume * clipWithVolume.Volume;
-                            newSource.Play();
+                            availableSource.clip = clipWithVolume.Clip;
+                            availableSource.loop = loop;
+                            availableSource.volume = _instance.voiceVolume * _instance.masterVolume * clipWithVolume.Volume;
+                            availableSource.Play();
 
                             if (!loop)
                             {
                                 // Start cleanup coroutine
-                                _instance.StartCoroutine(_instance.CleanupVoiceSourceAfterPlay(newSource, clipWithVolume.Clip));
+                                _instance.StartCoroutine(_instance.CleanupVoiceSourceAfterPlay(availableSource, clipWithVolume.Clip));
                             }
                         }
                         else
                         {
-                            Debug.LogWarning("All Voice AudioSources are busy, and max pool size reached.");
+                            if (_instance.maxVoicePoolSize == 0 || _instance._voiceSources.Count < _instance.maxVoicePoolSize)
+                            {
+                                AudioSource newSource = _instance.CreateNewVoiceSource(); // Dynamic source
+                                newSource.clip = clipWithVolume.Clip;
+                                newSource.loop = loop;
+                                newSource.volume = _instance.voiceVolume * _instance.masterVolume * clipWithVolume.Volume;
+                                newSource.Play();
+
+                                if (!loop)
+                                {
+                                    // Start cleanup coroutine
+                                    _instance.StartCoroutine(_instance.CleanupVoiceSourceAfterPlay(newSource, clipWithVolume.Clip));
+                                }
+                            }
+                            else
+                            {
+                                Debug.LogWarning("All Voice AudioSources are busy, and max pool size reached.");
+                            }
                         }
                     }
                 }
@@ -1043,6 +1149,41 @@ namespace HarmonyAudio.Scripts
             _voiceSources.Add(source);
             return source;
         }
+        
+        private AudioSource CreateNewSpatialSoundSource(Transform parentTransform, AudioAsset asset)
+        {
+            GameObject sourceObj = new GameObject("SpatialSoundSource");
+            sourceObj.transform.SetParent(parentTransform);
+            sourceObj.transform.localPosition = Vector3.zero; // Align with parent
+
+            AudioSource source = sourceObj.AddComponent<AudioSource>();
+            source.playOnAwake = false;
+
+            // Apply spatial settings from the AudioAsset
+            if (asset.useSpatialAudio)
+            {
+                source.spatialBlend = asset.spatialBlend;
+                source.rolloffMode = asset.rolloffMode;
+                source.minDistance = asset.minDistance;
+                source.maxDistance = asset.maxDistance;
+            }
+            else
+            {
+                source.spatialBlend = 0f; // 2D sound
+            }
+
+            return source;
+        }
+        
+        private IEnumerator CleanupSpatialSoundSourceAfterPlay(AudioSource source)
+        {
+            // Wait until the clip finishes playing
+            yield return new WaitWhile(() => source.isPlaying);
+
+            // Destroy the GameObject
+            Destroy(source.gameObject);
+        }
+
         
         #endregion
     }
