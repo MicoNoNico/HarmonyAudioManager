@@ -146,7 +146,7 @@ Harmony is a simple and efficient audio manager for Unity that enables easy play
    - In the  Inspector, click the **Regenerate Library** button.
    - This action will:
       - Generate or update the `MusicClips` and `SoundClips` enums based on your `AudioClip` names.
-      - Create or update the enum files in `HarmonyAudio/Scripts/Enums/`.
+      - Create or update the enum files in `HarmonyAudio/Scripts/Library/`.
    - Wait for Unity to recompile the scripts.
 
 ### [6] Using the Audio Manager
@@ -202,7 +202,7 @@ For more detailed information on the `AudioManager` and its capabilities, refer 
 #### Sound Methods
 
 - `PlaySound(SoundClips soundClip, Transform parentTransform = null)`
-    - Plays a sound effect. If a parentTransform is provided, the sound is played as a spatial audio source attached to that transform.
+    - Plays a sound effect. Supports spatial audio if a parentTransform is provided.
 - `PlayRandomSound(SoundClips soundClip, Transform parentTransform = null)`
     - Plays a random sound effect from an `AudioAsset` that allows multiple clips. Supports spatial audio if a parentTransform is provided.
 - `SetSoundVolume(float volume)`
